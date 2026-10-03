@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Berbagi di Desa Pendem, Kota Batu</title>
+    <meta name="description" content="Game edukasi matematika petualangan berbagi konsep pembagian di Desa Pendem Kota Batu dengan latar pemandangan pedesaan yang asri." />
+    <meta property="og:title" content="Petualangan Berbagi di Desa Pendem" />
+    <meta property="og:description" content="Game edukasi matematika petualangan berbagi konsep pembagian di Desa Pendem Kota Batu dengan latar pemandangan pedesaan yang asri." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Fredoka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+// Web Audio Synthesizer Engine & Master Normalizer
+function getAudioContext() {
+  if (!window._sharedAudioCtx) {
+    window._sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (window._sharedAudioCtx.state === 'suspended') {
+    window._sharedAudioCtx.resume();
+  }
+  return window._sharedAudioCtx;
+}
+window.getAudioContext = getAudioContext;
+
+// Master Bus dengan Dynamic Compressor untuk menjaga volume tetap konsisten dan seimbang
+function getAudioMaster() {
+  const ctx = getAudioContext();
+  if (!window._masterLimiter) {
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-14, ctx.currentTime);
+    comp.knee.setValueAtTime(8, ctx.currentTime);
+    comp.ratio.setValueAtTime(4, ctx.currentTime);
+    comp.attack.setValueAtTime(0.005, ctx.currentTime);
+    comp.release.setValueAtTime(0.12, ctx.currentTime);
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.35, ctx.currentTime); // Level referensi nyaman & seragam
+
+    comp.connect(masterGain);
+    masterGain.connect(ctx.destination);
+
+    window._masterLimiter = comp;
+    window._masterGain = masterGain;
+  }
+  return window._masterLimiter;
+}
+window.getAudioMaster = getAudioMaster;
+
+const SoundEffects = {
+  playMenuSelectSound() {
+    try {
+      const ctx = getAudioContext();
+      const master = getAudioMaster();
+      const now = ctx.currentTime;
+
+      // Nada pop gembira ceria untuk memilih menu & tombol (dikalibrasi ke level 0.18)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(now);
+      osc.stop(now + 0.09);
+
+      // Sentuhan sparkle harmonic lembut
+      const oscSparkle = ctx.createOscillator();
+      const gainSparkle = ctx.createGain();
+      oscSparkle.type = 'sine';
+      oscSparkle.frequency.setValueAtTime(1046, now);
+      gainSparkle.gain.setValueAtTime(0.06, now);
+      gainSparkle.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      oscSparkle.connect(gainSparkle);
+      gainSparkle.connect(master);
+      oscSparkle.start(now);
+      oscSparkle.stop(now + 0.06);
+    } catch (err) {}
+  },
+
+  playButtonClick() {
+    this.playMenuSelectSound();
+  }
+};
+
+window.playMenuSelectSound = function() {
+  SoundEffects.playMenuSelectSound();
+};
+
+// Event Delegation global: Menangkap klik pada semua tombol, menu pilihan, dan kartu level
+document.addEventListener('click', (e) => {
+  const interactive = e.target.closest('button, .btn, [role="button"], input[type="button"], input[type="submit"], a, .clickable, .level-cartridge, [onclick]');
+  if (interactive) {
+    // Hindari suara dobel untuk kartu benda dan tombol cek jawaban (yang memiliki efek suara tersendiri)
+    if (interactive.classList.contains('item-card') || interactive.id === 'btn-check-answer') {
+      return;
+    }
+    SoundEffects.playMenuSelectSound();
+  }
+}, true);
+
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                brand: {
+                    green: '#2e7d32',
+                    lightgreen: '#81c784',
+                    yellow: '#fbc02d',
+                    wood: '#8d6e63',
+                    cream: '#fffde7',
+                    brown: '#5d4037',
+                    sky: '#e0f7fa'
+                }
+            },
+            fontFamily: {
+                fredoka: ['Fredoka', 'sans-serif'],
+                sans: ['Inter', 'sans-serif']
+            }
+        }
+    }
+};
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            min-height: 100vh;
+        }
+        .font-game {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+        .item-card {
+            transition: all 0.2s ease;
+        }
+        .item-card:hover {
+            transform: scale(1.08);
+        }
+        .item-card:active {
+            transform: scale(0.92);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #81c784;
+            border-radius: 10px;
+        }
+        /* Village background layer */
+        .bg-village-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('/village_background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+            transform: scale(1.02);
+        }
+        .bg-village-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.0) 0%, rgba(220, 252, 231, 0.12) 40%, rgba(167, 243, 208, 0.22) 100%);
+            backdrop-filter: blur(0px);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Reduced Card Contrast with Frosted Village Translucency */
+        .game-main-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 3.5px solid rgba(5, 150, 105, 0.65);
+            box-shadow: 0 25px 60px -15px rgba(6, 78, 59, 0.3), 0 0 0 1.5px rgba(255, 255, 255, 0.8) inset;
+        }
+        .game-sub-card {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        /* Deluxe Hanging Wooden Signboard with Iron Chains */
+        .hanging-chain-pair {
+            display: flex;
+            justify-content: space-between;
+            max-width: 420px;
+            margin: 0 auto -12px auto;
+            padding: 0 2.5rem;
+            position: relative;
+            z-index: 25;
+            pointer-events: none;
+        }
+        .hanging-chain {
+            width: 14px;
+            height: 26px;
+            border-radius: 7px;
+            border: 3.5px solid #78716c;
+            background: linear-gradient(180deg, #d6d3d1 0%, #78716c 50%, #44403c 100%);
+            box-shadow: 0 3px 5px rgba(0,0,0,0.5), inset 0 1px 1px #fff;
+            position: relative;
+        }
+        .hanging-chain::after {
+            content: '';
+            position: absolute;
+            top: 13px;
+            left: 0;
+            width: 7px;
+            height: 18px;
+            border-radius: 4px;
+            border: 3px solid #57534e;
+            background: #292524;
+            z-index: -1;
+        }
+        .wood-signboard-deluxe {
+            background: radial-gradient(circle at 50% 15%, #b45309 0%, #92400e 35%, #713f12 70%, #451a03 100%);
+            border: 4px solid #fde047;
+            outline: 4px solid #78350f;
+            box-shadow: 
+                0 22px 50px -10px rgba(30, 12, 4, 0.7),
+                0 10px 20px rgba(0, 0, 0, 0.45),
+                inset 0 3px 6px rgba(255, 255, 255, 0.45),
+                inset 0 -6px 12px rgba(0, 0, 0, 0.85);
+            position: relative;
+            transform: translateZ(0);
+        }
+        .wood-corner-stud {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 35% 35%, #fef08a, #ca8a04 60%, #713f12);
+            border: 1px solid #fef08a;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.6), inset 0 1px 1px #fff;
+        }
+        .wood-sign-3d-title {
+            color: #fef08a;
+            letter-spacing: 0.04em;
+            text-shadow: 
+                0 1px 0 #ffffff,
+                0 2px 0 #fde047,
+                0 3px 0 #eab308,
+                0 5px 0 #ca8a04,
+                0 7px 0 #854d0e,
+                0 9px 0 #582f0e,
+                0 11px 0 #3e1f07,
+                0 15px 22px rgba(0, 0, 0, 0.9);
+        }
+        .parchment-scroll-deluxe {
+            background: linear-gradient(180deg, #fffef7 0%, #fef9c3 35%, #fef08a 85%, #fde047 100%);
+            border: 3px solid #ca8a04;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 25px -4px rgba(69, 26, 3, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.9), inset 0 -3px 6px rgba(180, 83, 9, 0.25);
+            position: relative;
+        }
+        .parchment-scroll-deluxe::before, .parchment-scroll-deluxe::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 80%;
+            background: linear-gradient(90deg, #854d0e 0%, #ca8a04 50%, #713f12 100%);
+            border-radius: 4px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .parchment-scroll-deluxe::before {
+            left: -7px;
+        }
+        .parchment-scroll-deluxe::after {
+            right: -7px;
+        }
+        .wood-badge {
+            background: linear-gradient(180deg, #b45309 0%, #854d0e 50%, #713f12 100%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 3px 6px rgba(0,0,0,0.25);
+        }
+
+        /* Tactile 3D High-Contrast Game Buttons */
+        .btn-game-primary {
+            background: linear-gradient(180deg, #10b981 0%, #059669 45%, #047857 100%);
+            border: 2.5px solid #a7f3d0;
+            border-bottom: 6px solid #064e3b;
+            box-shadow: 0 10px 20px -3px rgba(6, 78, 59, 0.5), 0 4px 6px -1px rgba(0, 0, 0, 0.25), inset 0 2px 2px rgba(255, 255, 255, 0.7);
+            color: #ffffff !important;
+            text-shadow: 0 2px 2px rgba(0, 0, 0, 0.6);
+            transition: all 0.12s ease;
+            position: relative;
+        }
+        .btn-game-primary:hover {
+            background: linear-gradient(180deg, #34d399 0%, #10b981 45%, #059669 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 14px 26px -3px rgba(6, 78, 59, 0.65), 0 6px 8px -1px rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.85);
+            filter: brightness(1.06);
+        }
+        .btn-game-primary:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            box-shadow: 0 3px 8px rgba(6, 78, 59, 0.4);
+        }
+
+        .btn-game-amber {
+            background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 45%, #d97706 100%);
+            border: 2.5px solid #fef08a;
+            border-bottom: 6px solid #78350f;
+            box-shadow: 0 10px 20px -3px rgba(120, 53, 15, 0.5), 0 4px 6px -1px rgba(0, 0, 0, 0.25), inset 0 2px 2px rgba(255, 255, 255, 0.8);
+            color: #ffffff !important;
+            text-shadow: 0 2px 2px rgba(120, 53, 15, 0.75);
+            transition: all 0.12s ease;
+            position: relative;
+        }
+        .btn-game-amber:hover {
+            background: linear-gradient(180deg, #fde047 0%, #fbbf24 45%, #f59e0b 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 14px 26px -3px rgba(120, 53, 15, 0.65), 0 6px 8px -1px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.06);
+        }
+        .btn-game-amber:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            box-shadow: 0 3px 8px rgba(120, 53, 15, 0.4);
+        }
+
+        .btn-game-wood {
+            background: linear-gradient(180deg, #92400e 0%, #78350f 45%, #451a03 100%);
+            border: 2.5px solid #fcd34d;
+            border-bottom: 6px solid #290e03;
+            box-shadow: 0 10px 20px -3px rgba(41, 14, 3, 0.55), inset 0 2px 2px rgba(255, 255, 255, 0.5);
+            color: #ffffff !important;
+            text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7);
+            transition: all 0.12s ease;
+        }
+        .btn-game-wood:hover {
+            background: linear-gradient(180deg, #b45309 0%, #92400e 45%, #78350f 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 14px 26px -3px rgba(41, 14, 3, 0.7);
+        }
+        .btn-game-wood:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            box-shadow: 0 3px 8px rgba(41, 14, 3, 0.4);
+        }
+
+        .btn-game-secondary {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 45%, #e2e8f0 100%);
+            border: 2.5px solid #ffffff;
+            border-bottom: 5px solid #475569;
+            box-shadow: 0 8px 18px -2px rgba(15, 23, 42, 0.3), inset 0 2px 1px rgba(255, 255, 255, 1);
+            color: #0f172a !important;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+            transition: all 0.12s ease;
+        }
+        .btn-game-secondary:hover {
+            background: linear-gradient(180deg, #ffffff 0%, #ffffff 45%, #f1f5f9 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px -2px rgba(15, 23, 42, 0.4);
+            color: #020617 !important;
+        }
+        .btn-game-secondary:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+            box-shadow: 0 3px 6px rgba(15, 23, 42, 0.25);
+        }
+
+        .btn-game-rose {
+            background: linear-gradient(180deg, #fb7185 0%, #f43f5e 45%, #e11d48 100%);
+            border: 2.5px solid #fecdd3;
+            border-bottom: 5px solid #881337;
+            box-shadow: 0 8px 18px -2px rgba(136, 19, 55, 0.5), inset 0 2px 1px rgba(255, 255, 255, 0.7);
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            transition: all 0.12s ease;
+        }
+        .btn-game-rose:hover {
+            background: linear-gradient(180deg, #fda4af 0%, #fb7185 45%, #f43f5e 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -2px rgba(136, 19, 55, 0.65);
+        }
+        .btn-game-rose:active {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+
+        /* 3D Tactile Level Cartridges */
+        .level-cartridge {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .level-cartridge:hover {
+            transform: translateY(-5px) scale(1.015);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-800 relative bg-emerald-50">
+
+    <!-- Fixed Village Scenery Background Layer -->
+    <div class="bg-village-canvas" aria-hidden="true"></div>
+    <div class="bg-village-overlay" aria-hidden="true"></div>
+
+    <!-- Header Navigation -->
+    <header class="bg-emerald-700/95 backdrop-blur-md text-white shadow-xl sticky top-0 z-40 border-b-4 border-emerald-900">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goToCover()">
+                <div class="bg-yellow-400 text-emerald-900 p-2 rounded-2xl shadow font-game font-bold text-xl flex items-center justify-center w-10 h-10 border-2 border-white">
+                    🏔️
+                </div>
+                <div>
+                    <h1 class="font-game text-lg sm:text-xl font-bold tracking-wide leading-tight drop-shadow-sm">Desa Pendem, Batu</h1>
+                    <p class="text-xs text-emerald-200 hidden sm:block">Petualangan Berbagi Matematika</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center space-x-2">
+                <button id="btnKelolaSoal" onclick="promptPasswordKelolaSoal()" class="btn-game-amber px-3.5 py-1.5 text-white font-game text-xs sm:text-sm font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer" title="Menu Kelola & Edit Soal">
+                    <i class="fa-solid fa-lock text-xs text-yellow-200"></i>
+                    <span>Kelola Soal</span>
+                </button>
+
+                <!-- Game Stats Header -->
+                <div id="header-stats" class="hidden flex items-center space-x-2 sm:space-x-3">
+                    <div class="bg-emerald-900/90 px-3 py-1.5 rounded-full border-2 border-emerald-500 flex items-center space-x-1.5 shadow-md">
+                        <span class="text-yellow-300 text-lg">⭐</span>
+                        <span id="stat-score" class="font-game font-bold text-yellow-300 text-base sm:text-lg">0</span>
+                    </div>
+                    <div class="bg-emerald-900/90 px-3 py-1.5 rounded-full border-2 border-emerald-500 text-xs font-game text-emerald-100 hidden sm:block shadow-md">
+                        Level <span id="stat-level" class="font-bold text-white">1</span>
+                    </div>
+                    <button onclick="goToLevelSelect()" class="btn-game-amber text-white px-3.5 py-1.5 rounded-xl font-game text-xs sm:text-sm font-semibold flex items-center cursor-pointer">
+                        <i class="fa-solid fa-list mr-1"></i> Level
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area Floating on Background -->
+    <main class="flex-grow flex items-center justify-center p-3 sm:p-6 relative z-10">
+        <div class="w-full max-w-5xl">
+
+            <!-- Screen 1: Cover Screen -->
+            <div id="screen-cover" class="game-main-card rounded-3xl shadow-2xl overflow-hidden border-4 border-emerald-600/80">
+                
+                <!-- 3D Hanging Wooden Game Plaque / Title Signboard -->
+                <div class="p-4 sm:p-7 pt-5 sm:pt-6">
+                    <!-- Hanging Iron Chains from Top Canopy -->
+                    <div class="hanging-chain-pair">
+                        <div class="hanging-chain"></div>
+                        <div class="hanging-chain"></div>
+                    </div>
+
+                    <div class="wood-signboard-deluxe rounded-3xl p-6 sm:p-9 text-center relative overflow-hidden transform hover:scale-[1.008] transition-transform duration-300">
+                        <!-- Four Golden Corner Studs/Rivets -->
+                        <div class="wood-corner-stud top-3 left-3"></div>
+                        <div class="wood-corner-stud top-3 right-3"></div>
+                        <div class="wood-corner-stud bottom-3 left-3"></div>
+                        <div class="wood-corner-stud bottom-3 right-3"></div>
+
+                        <!-- Corner Nature Accents -->
+                        <div class="absolute -top-1 left-7 text-2xl select-none filter drop-shadow">🍃</div>
+                        <div class="absolute -top-1 right-7 text-2xl select-none filter drop-shadow">🍃</div>
+                        <div class="absolute -bottom-1 left-8 text-2xl select-none filter drop-shadow">🌾</div>
+                        <div class="absolute -bottom-1 right-8 text-2xl select-none filter drop-shadow">🌾</div>
+
+                        <!-- Location & Theme Badge -->
+                        <div class="inline-flex items-center gap-2 bg-gradient-to-r from-amber-950 via-stone-900 to-amber-950 border-2 border-yellow-400 text-yellow-300 text-xs sm:text-sm px-4 py-1.5 rounded-full font-bold shadow-xl mb-3.5 tracking-wide">
+                            <span class="text-sm">📍</span>
+                            <span>Situs Sejarah & Lumbung Pangan Desa Pendem, Kota Batu</span>
+                        </div>
+
+                        <!-- Main Game Title with Deep 3D Wood Carved Relief -->
+                        <h2 class="font-game text-2xl sm:text-4xl md:text-[2.75rem] font-extrabold mb-3 tracking-wider wood-sign-3d-title leading-tight">
+                            PETUALANGAN BERBAGI DI DESA PENDEM
+                        </h2>
+
+                        <!-- Golden Ribbon Subtitle Banner -->
+                        <div class="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-500 text-amber-950 font-game font-extrabold text-xs sm:text-sm px-5 py-1.5 rounded-full shadow-lg border-2 border-yellow-100 mb-4 tracking-wide transform hover:scale-105 transition-transform">
+                            <span>✨</span>
+                            <span>Belajar Konsep Pembagian Melalui Pengurangan Berulang</span>
+                            <span>✨</span>
+                        </div>
+
+                        <!-- Deluxe Royal Mission Scroll / Papyrus Decree Description Box -->
+                        <div class="parchment-scroll-deluxe p-4 sm:p-5 max-w-2xl mx-auto shadow-2xl border-2 border-amber-600/70 text-center relative mt-1">
+                            <div class="inline-flex items-center gap-1.5 bg-red-700 text-yellow-200 text-[11px] sm:text-xs font-game font-bold px-3 py-0.5 rounded-full shadow-md mb-2 border border-yellow-300">
+                                <span>📜</span> Dekrit Resmi Lumbung Desa
+                            </div>
+                            <p class="text-amber-950 text-xs sm:text-base font-bold leading-relaxed px-2 sm:px-4">
+                                "Mari berpetualang bersama Pak Kades dan warga Desa Pendem! Bantu bagikan hasil panen sayuran, beras, buah manis, madu, dan kerajinan desa secara adil hingga habis tepat menjadi nol!"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-5 sm:p-8 space-y-6 pt-0 sm:pt-0">
+                    <div class="bg-amber-50/95 border-2 border-amber-300 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 shadow-md relative overflow-hidden">
+                        <div class="relative flex-shrink-0">
+                            <div class="w-24 h-24 sm:w-28 sm:h-28 bg-emerald-100 border-4 border-emerald-600 rounded-full overflow-hidden shadow-lg ring-4 ring-amber-300/60">
+                                <img src="/pak_kades.jpg" alt="Pak Kepala Desa" class="w-full h-full object-cover" />
+                            </div>
+                            <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-amber-600 border border-amber-300 text-white text-[11px] font-game font-bold px-3 py-0.5 rounded-full whitespace-nowrap shadow-md flex items-center gap-1">
+                                <span>🎖️</span> Pak Kades
+                            </span>
+                        </div>
+                        <div class="flex-grow text-center sm:text-left space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-game font-bold text-amber-950 text-lg sm:text-xl">Pak Wijaya (Kepala Desa)</h3>
+                                    <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">Desa Pendem</span>
+                                </div>
+                                <button onclick="speakNarration()" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-full text-xs flex items-center justify-center shadow transition-transform active:scale-95" title="Dengarkan Suara">
+                                    <i class="fa-solid fa-volume-high text-sm px-1"></i>
+                                </button>
+                            </div>
+                            <p id="narration-text" class="text-gray-800 text-sm sm:text-base leading-relaxed font-medium">
+                                "Selamat datang di Desa Pendem! Saya Pak Kades, bersama warga mari kita bagikan hasil bumi dan kerajinan seperti beras, sayuran segar, buah-buahan, madu alami, dan bibit tanaman secara adil dan merata lewat pengurangan berulang!"
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-game font-bold text-gray-800 text-base sm:text-lg mb-3 flex items-center">
+                            <i class="fa-solid fa-compass text-emerald-600 mr-2"></i> 3 Langkah Misi Berbagi:
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="bg-emerald-50/90 p-4 rounded-xl border border-emerald-200 flex items-start space-x-3 shadow-sm">
+                                <span class="bg-emerald-600 text-white font-game font-bold rounded-lg w-7 h-7 flex items-center justify-center flex-shrink-0 text-sm shadow">1</span>
+                                <div>
+                                    <h5 class="font-bold text-emerald-900 text-sm">Baca Cerita Warga</h5>
+                                    <p class="text-xs text-gray-600 mt-1">Pahami berapa total benda dan susun kalimat pembagiannya.</p>
+                                </div>
+                            </div>
+                            <div class="bg-emerald-50/90 p-4 rounded-xl border border-emerald-200 flex items-start space-x-3 shadow-sm">
+                                <span class="bg-emerald-600 text-white font-game font-bold rounded-lg w-7 h-7 flex items-center justify-center flex-shrink-0 text-sm shadow">2</span>
+                                <div>
+                                    <h5 class="font-bold text-emerald-900 text-sm">Masukkan ke Wadah</h5>
+                                    <p class="text-xs text-gray-600 mt-1">Pindahkan benda ke dalam wadah pengelompokan yang tersedia.</p>
+                                </div>
+                            </div>
+                            <div class="bg-emerald-50/90 p-4 rounded-xl border border-emerald-200 flex items-start space-x-3 shadow-sm">
+                                <span class="bg-emerald-600 text-white font-game font-bold rounded-lg w-7 h-7 flex items-center justify-center flex-shrink-0 text-sm shadow">3</span>
+                                <div>
+                                    <h5 class="font-bold text-emerald-900 text-sm">Pengurangan Berulang</h5>
+                                    <p class="text-xs text-gray-600 mt-1">Amati pengurangan hingga sisa benda menjadi tepat 0.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center items-center pt-3">
+                        <button onclick="goToLevelSelect()" class="btn-game-primary w-full sm:w-auto text-white font-game text-lg sm:text-xl px-12 py-4 rounded-2xl font-bold flex items-center justify-center gap-2.5 cursor-pointer shadow-xl">
+                            <span>🚀</span> Siap! Mulai Petualangan Berbagi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 2: Level Selection -->
+            <div id="screen-levels" class="hidden game-main-card rounded-3xl shadow-2xl p-6 sm:p-8">
+                <div class="text-center mb-8">
+                    <h2 class="font-game text-2xl sm:text-3xl font-extrabold text-emerald-800 drop-shadow-sm">
+                        Pilih Lingkungan yang Ingin Kamu Bantu
+                    </h2>
+                    <p class="text-gray-700 text-sm mt-1 font-medium">Bantu warga membagikan hasil panen secara adil di lingkungan RT, RW, Desa, atau Kelurahan</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div onclick="selectLevel(1)" class="bg-white/95 hover:bg-emerald-50 border-2 border-b-[6px] border-emerald-400 hover:border-emerald-600 rounded-2xl p-5 cursor-pointer level-cartridge shadow-lg hover:shadow-2xl flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-gradient-to-b from-emerald-400 to-emerald-600 border-2 border-emerald-300 text-white rounded-2xl flex items-center justify-center text-3xl font-game font-bold flex-shrink-0 shadow-md">
+                            🌱
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-game font-bold text-emerald-950 text-base sm:text-lg">Level 1: Lingkungan RT</h3>
+                                <span id="badge-count-lvl-1" class="text-xs bg-emerald-200 text-emerald-900 border border-emerald-400 px-2.5 py-0.5 rounded-full font-bold shadow-xs">6 Soal</span>
+                            </div>
+                            <p class="text-xs text-gray-700 mt-1 font-medium">Wadah terisi otomatis untuk panduan berbagi di lingkungan RT.</p>
+                        </div>
+                    </div>
+
+                    <div onclick="selectLevel(2)" class="bg-white/95 hover:bg-teal-50 border-2 border-b-[6px] border-teal-400 hover:border-teal-600 rounded-2xl p-5 cursor-pointer level-cartridge shadow-lg hover:shadow-2xl flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-gradient-to-b from-teal-400 to-teal-600 border-2 border-teal-300 text-white rounded-2xl flex items-center justify-center text-3xl font-game font-bold flex-shrink-0 shadow-md">
+                            🌿
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-game font-bold text-teal-950 text-base sm:text-lg">Level 2: Lingkungan RW</h3>
+                                <span id="badge-count-lvl-2" class="text-xs bg-teal-200 text-teal-900 border border-teal-400 px-2.5 py-0.5 rounded-full font-bold shadow-xs">6 Soal</span>
+                            </div>
+                            <p class="text-xs text-gray-700 mt-1 font-medium">Isi wadah mandiri & gunakan tombol "Cek Jawaban" untuk berbagi di lingkungan RW.</p>
+                        </div>
+                    </div>
+
+                    <div onclick="selectLevel(3)" class="bg-white/95 hover:bg-amber-50 border-2 border-b-[6px] border-amber-400 hover:border-amber-600 rounded-2xl p-5 cursor-pointer level-cartridge shadow-lg hover:shadow-2xl flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-gradient-to-b from-amber-400 to-amber-600 border-2 border-amber-300 text-white rounded-2xl flex items-center justify-center text-3xl font-game font-bold flex-shrink-0 shadow-md">
+                            🌳
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-game font-bold text-amber-950 text-base sm:text-lg">Level 3: Lingkungan Desa</h3>
+                                <span id="badge-count-lvl-3" class="text-xs bg-amber-200 text-amber-900 border border-amber-400 px-2.5 py-0.5 rounded-full font-bold shadow-xs">6 Soal</span>
+                            </div>
+                            <p class="text-xs text-gray-700 mt-1 font-medium">Pengurangan berulang dengan hasil panen lumbung se-lingkungan Desa.</p>
+                        </div>
+                    </div>
+
+                    <div onclick="selectLevel(4)" class="bg-white/95 hover:bg-rose-50 border-2 border-b-[6px] border-rose-400 hover:border-rose-600 rounded-2xl p-5 cursor-pointer level-cartridge shadow-lg hover:shadow-2xl flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-gradient-to-b from-rose-400 to-rose-600 border-2 border-rose-300 text-white rounded-2xl flex items-center justify-center text-3xl font-game font-bold flex-shrink-0 shadow-md">
+                            🔥
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-game font-bold text-rose-950 text-base sm:text-lg">Level 4: Lingkungan Kelurahan</h3>
+                                <span id="badge-count-lvl-4" class="text-xs bg-rose-200 text-rose-900 border border-rose-400 px-2.5 py-0.5 rounded-full font-bold shadow-xs">6 Soal</span>
+                            </div>
+                            <p class="text-xs text-gray-700 mt-1 font-medium">Misi analisis multi-langkah (menyisihkan cadangan warga se-lingkungan Kelurahan).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center flex justify-center items-center">
+                    <button onclick="goToCover()" class="btn-game-secondary px-7 py-3 rounded-xl font-game text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer shadow-md">
+                        ← Kembali ke Halaman Utama
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen 3: Question Editor -->
+            <div id="screen-editor" class="hidden game-main-card rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-4">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-teal-100 text-teal-800 text-xs font-bold px-3 py-1 rounded-full font-game">
+                                ✏️ Menu Editor
+                            </span>
+                            <h2 class="font-game text-2xl sm:text-3xl font-extrabold text-teal-900">
+                                Kelola & Tambah Soal
+                            </h2>
+                        </div>
+                        <p class="text-gray-600 text-xs sm:text-sm mt-1">
+                            Tambah, edit, atau hapus soal untuk tiap tingkat kesulitan tanpa mengubah jalannya permainan.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="openQuestionModal(-1)" class="btn-game-primary text-white font-game text-xs sm:text-sm px-4 py-2.5 rounded-xl font-bold flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Tambah Soal</span>
+                        </button>
+                        <button onclick="confirmResetQuestions()" class="btn-game-rose text-white font-game text-xs sm:text-sm px-3.5 py-2.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1" title="Kembalikan Soal ke Default">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Level Selector Tabs in Editor -->
+                <div class="flex flex-wrap gap-2.5 border-b border-gray-200 pb-3">
+                    <button id="editor-tab-1" onclick="switchEditorLevel(1)" class="px-4 py-2.5 rounded-xl font-game font-bold text-xs sm:text-sm transition bg-teal-700 text-white shadow-md border-b-2 border-teal-900 cursor-pointer">
+                        🌱 Level 1 (Lingkungan RT)
+                    </button>
+                    <button id="editor-tab-2" onclick="switchEditorLevel(2)" class="px-4 py-2.5 rounded-xl font-game font-bold text-xs sm:text-sm transition bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-xs">
+                        🌿 Level 2 (Lingkungan RW)
+                    </button>
+                    <button id="editor-tab-3" onclick="switchEditorLevel(3)" class="px-4 py-2.5 rounded-xl font-game font-bold text-xs sm:text-sm transition bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-xs">
+                        🌳 Level 3 (Lingkungan Desa)
+                    </button>
+                    <button id="editor-tab-4" onclick="switchEditorLevel(4)" class="px-4 py-2.5 rounded-xl font-game font-bold text-xs sm:text-sm transition bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-xs">
+                        🔥 Level 4 (Lingkungan Kelurahan)
+                    </button>
+                </div>
+
+                <!-- Question List Table/Cards -->
+                <div id="editor-question-list" class="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                    <!-- Dynamic Questions Rendered Here -->
+                </div>
+
+                <div class="pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <button onclick="goToLevelSelect()" class="btn-game-secondary px-4 py-2.5 rounded-xl text-gray-700 font-game text-xs sm:text-sm font-bold flex items-center space-x-1.5 cursor-pointer">
+                        <i class="fa-solid fa-arrow-left mr-1"></i>
+                        <span>Kembali ke Pilih Level</span>
+                    </button>
+                    <button onclick="goToCover()" class="btn-game-secondary px-4 py-2.5 rounded-xl text-gray-800 font-game text-xs sm:text-sm font-bold cursor-pointer">
+                        🏠 Halaman Utama
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen 4: Active Game Gameplay -->
+            <div id="screen-game" class="hidden space-y-4">
+                
+                <!-- Game Header & Progress -->
+                <div class="bg-white/75 backdrop-blur-md p-4 rounded-2xl shadow-md border-2 border-emerald-400 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="flex items-center space-x-3 w-full sm:w-auto">
+                        <span id="question-type-badge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full font-game shadow-sm">
+                            Soal 1/6
+                        </span>
+                        <span id="question-category-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full font-game shadow-sm">
+                            Bentuk Angka
+                        </span>
+                    </div>
+                    
+                    <div class="w-full sm:w-64 bg-gray-200/90 h-3 rounded-full overflow-hidden shadow-inner">
+                        <div id="progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-300" style="width: 16.6%;"></div>
+                    </div>
+                </div>
+
+                <!-- Question Story Card -->
+                <div class="bg-amber-50/85 backdrop-blur-md border-2 border-amber-300 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+                    <div class="flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+                        
+                        <!-- Left Side: Emoji and Story Description -->
+                        <div class="flex items-start space-x-4 flex-grow">
+                            <div id="item-emoji-display" class="text-4xl sm:text-5xl bg-white p-3 rounded-2xl shadow border border-amber-200 flex-shrink-0">
+                                🌟
+                            </div>
+                            <div class="flex-grow space-y-1">
+                                <h3 id="story-title" class="font-game font-bold text-amber-900 text-base sm:text-lg">
+                                    Judul Soal
+                                </h3>
+                                <p id="story-text" class="text-gray-700 text-sm sm:text-base leading-relaxed">
+                                    Deskripsi soal...
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Division Math Input Badge -->
+                        <div id="math-expression-badge" class="hidden w-full md:w-auto flex-shrink-0 bg-emerald-700 text-white border-2 border-emerald-800 p-3.5 rounded-2xl shadow-md text-center flex flex-col items-center justify-center min-w-[170px]">
+                            <span class="text-[11px] font-bold text-emerald-200 uppercase tracking-wider flex items-center gap-1">
+                                <i class="fa-solid fa-calculator text-amber-300"></i> Soal Pembagian
+                            </span>
+                            <div class="font-game font-extrabold text-xl sm:text-2xl text-yellow-300 mt-1 tracking-wide flex items-center justify-center gap-1.5">
+                                <span id="math-num-total">6</span>
+                                <span>÷</span>
+                                <span id="math-num-size">2</span>
+                                <span>=</span>
+                                <input type="number" id="input-number-result" placeholder="?" class="w-12 h-9 text-center bg-white text-emerald-900 border-2 border-yellow-400 rounded-lg text-lg font-bold shadow-inner focus:outline-none focus:ring-2 focus:ring-yellow-300" oninput="validateNumberInput()">
+                            </div>
+                            <div id="number-input-feedback" class="text-[11px] font-bold mt-1 text-emerald-200">
+                                Ketik hasil pembagian di atas
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div id="hots-step-banner" class="hidden mt-4 bg-rose-100 border border-rose-300 p-2.5 rounded-xl text-xs text-rose-900 font-semibold flex items-center shadow-sm">
+                        <i class="fa-solid fa-lightbulb text-rose-600 mr-2 text-base"></i>
+                        <span id="hots-step-text">Langkah 1: Baca cerita dan sisihkan benda cadangan ke Area Cadangan!</span>
+                    </div>
+
+                    <!-- Kotak Tips Pengerjaan -->
+                    <div id="hint-box" class="hidden mt-3 bg-amber-100 border-2 border-amber-400 p-3.5 rounded-xl text-xs sm:text-sm text-amber-950 font-medium flex items-start space-x-3 shadow-sm">
+                        <span class="text-2xl flex-shrink-0">💡</span>
+                        <div>
+                            <span class="font-bold font-game text-amber-900 block text-sm">Tips Pengerjaan:</span>
+                            <span id="hint-text" class="leading-relaxed">...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    
+                    <!-- LEFT SIDE: Items Table & Reserve Box -->
+                    <div class="lg:col-span-5 bg-white/78 backdrop-blur-md p-5 rounded-2xl shadow-md border-2 border-emerald-400 flex flex-col justify-between min-h-[320px]">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-game font-bold text-gray-800 text-sm sm:text-base flex items-center">
+                                    📦 Meja Utama (Sisa Benda)
+                                </h4>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-lg font-bold shadow-sm">
+                                    Sisa: <span id="items-left-count" class="text-sm">0</span>
+                                </span>
+                            </div>
+
+                            <p class="text-xs text-gray-600 mb-3 font-medium">
+                                Klik benda di bawah ini untuk memasukkannya ke wadah aktif.
+                            </p>
+
+                            <div id="items-grid" class="flex flex-wrap gap-2.5 justify-center sm:justify-start max-h-[220px] overflow-y-auto p-2 bg-emerald-50/90 rounded-xl border border-emerald-200 min-h-[100px]">
+                                <!-- Items rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- HOTS Interactive Reserve Box -->
+                        <div id="hots-reserve-box" class="hidden mt-3 pt-3 border-t border-rose-200">
+                            <div class="bg-rose-50/90 border-2 border-rose-300 p-3 rounded-xl shadow-sm">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h5 class="font-game font-bold text-rose-900 text-xs flex items-center">
+                                        📌 Area Cadangan / Pajangan
+                                    </h5>
+                                    <span class="text-[11px] font-bold text-rose-700 bg-rose-200 px-2 py-0.5 rounded-md">
+                                        <span id="reserve-current-count">0</span> Benda
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="moveItemToReserve()" class="btn-game-rose font-game text-xs py-2 px-3.5 rounded-xl font-bold transition flex-shrink-0 cursor-pointer flex items-center gap-1">
+                                        <span>➕</span> Sisihkan 1 Benda
+                                    </button>
+                                    <div id="reserve-items-container" class="flex flex-wrap gap-1 items-center bg-white p-1.5 rounded-lg border border-rose-200 min-h-[36px] flex-grow shadow-inner">
+                                        <!-- Reserved item slots rendered dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE: Container Grouping Area & Math Expression -->
+                    <div class="lg:col-span-7 bg-white/78 backdrop-blur-md p-5 rounded-2xl shadow-md border-2 border-emerald-400 flex flex-col justify-between min-h-[320px]">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-game font-bold text-gray-800 text-sm sm:text-base flex items-center">
+                                    📥 Area Wadah Pengelompokan
+                                </h4>
+                                <div class="flex items-center space-x-2">
+                                    <button id="btn-add-container" onclick="addNewContainer()" class="hidden btn-game-primary text-white text-xs font-bold px-3.5 py-1.5 rounded-xl font-game cursor-pointer shadow-md">
+                                        ➕ Wadah Baru
+                                    </button>
+                                    <span class="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-lg font-bold shadow-sm">
+                                        Terisi: <span id="containers-count" class="text-sm">0</span> Wadah
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div id="containers-area" class="flex flex-wrap gap-3 max-h-[200px] overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200 min-h-[140px] items-start">
+                                <!-- Containers rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Subtraction Formula Visualizer & Math Input -->
+                        <div class="mt-4 pt-3 border-t border-gray-200 space-y-3">
+                            <div class="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-center space-y-1 shadow-sm">
+                                <p class="text-xs text-amber-800 font-semibold">Proses Pengurangan Berulang:</p>
+                                <div id="subtraction-expression" class="font-game font-bold text-emerald-800 text-xs sm:text-base tracking-wider leading-relaxed">
+                                    0 = 0
+                                </div>
+                            </div>
+
+                            <!-- Interactive Story Math Input -->
+                            <div id="story-math-input-badge" class="hidden bg-amber-50 border-2 border-amber-400 p-3 rounded-xl shadow-sm text-center flex flex-col items-center justify-center">
+                                <span class="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1 mb-1">
+                                    ✏ Tulis Kalimat Pembagian
+                                </span>
+                                <div class="flex items-center justify-center gap-1.5 font-game font-extrabold text-lg text-emerald-800 my-1">
+                                    <input type="number" id="input-story-total" placeholder="Total" class="w-16 h-10 text-center bg-white border-2 border-amber-300 rounded-xl focus:border-emerald-600 focus:outline-none font-bold text-sm shadow-inner transition placeholder:font-normal placeholder:text-gray-400" oninput="validateStoryMathInput()">
+                                    <span class="text-xl text-amber-800 font-bold">÷</span>
+                                    <input type="number" id="input-story-size" placeholder="Isi" class="w-14 h-10 text-center bg-white border-2 border-amber-300 rounded-xl focus:border-emerald-600 focus:outline-none font-bold text-sm shadow-inner transition placeholder:font-normal placeholder:text-gray-400" oninput="validateStoryMathInput()">
+                                    <span class="text-xl text-amber-800 font-bold">=</span>
+                                    <input type="number" id="input-story-result" placeholder="Hasil" class="w-16 h-10 text-center bg-white border-2 border-amber-300 rounded-xl focus:border-emerald-600 focus:outline-none font-bold text-sm shadow-inner transition placeholder:font-normal placeholder:text-gray-400" oninput="validateStoryMathInput()">
+                                </div>
+                                <div id="story-input-feedback" class="text-[11px] font-bold mt-1 text-amber-700">
+                                    Ketik kalimat pembagian berdasarkan cerita
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2.5 pt-1">
+                                <button id="btn-check-container" onclick="checkCurrentContainer()" class="btn-game-primary flex-grow text-white font-game text-xs sm:text-sm py-3.5 px-4 rounded-2xl font-bold flex items-center justify-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-circle-check text-yellow-300 text-lg"></i>
+                                    <span>✅ Cek Jawaban & Wadah</span>
+                                </button>
+                                <button id="btn-hint" onclick="useHint()" class="btn-game-amber text-white font-game text-xs sm:text-sm py-3 px-3.5 rounded-2xl font-bold flex items-center gap-1.5 cursor-pointer" title="Gunakan 20 Poin untuk Membuka Tips">
+                                    <span>💡</span> Tips (-20)
+                                </button>
+                                <button onclick="resetCurrentQuestion()" class="btn-game-secondary font-game text-xs sm:text-sm py-3 px-3.5 rounded-2xl font-bold transition cursor-pointer" title="Ulangi Soal Ini">
+                                    🔄 Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Success Panel -->
+                <div id="feedback-panel" class="hidden bg-emerald-900/95 backdrop-blur-md text-white border-4 border-yellow-400 rounded-3xl p-6 shadow-2xl text-center space-y-4">
+                    <div class="flex items-center justify-center gap-4">
+                        <div class="relative">
+                            <img src="/pak_kades_senang.jpg" alt="Pak Kades Bahagia" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-yellow-300 shadow-lg object-cover ring-2 ring-emerald-500" />
+                            <span class="absolute -bottom-1 -right-1 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full shadow font-bold">✨</span>
+                        </div>
+                        <div class="text-left">
+                            <span class="inline-block bg-red-600 text-white font-game font-bold text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-sm mb-1">
+                                🏆 Kamu Hebat!
+                            </span>
+                            <h3 class="font-game text-xl sm:text-2xl font-bold text-yellow-300">
+                                Jawaban & Pembagian Tepat!
+                            </h3>
+                            <p class="text-xs text-emerald-200">Pak Kades sangat bangga dengan kerja kerasmu!</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-emerald-950/80 border border-emerald-600 rounded-2xl p-3.5 space-y-1">
+                        <div id="feedback-formula" class="font-game text-lg sm:text-xl text-yellow-300 font-extrabold tracking-wide">
+                            6 - 2 - 2 - 2 = 0
+                        </div>
+                        <div id="feedback-summary" class="text-xs sm:text-sm text-emerald-100 font-medium">
+                            6 ÷ 2 = 3 Wadah
+                        </div>
+                    </div>
+
+                    <div id="feedback-hots-explanation" class="hidden text-xs bg-emerald-950 p-3 rounded-xl border border-emerald-700 text-emerald-200 text-left">
+                        Penjelasan HOTS...
+                    </div>
+
+                    <button onclick="nextQuestion()" class="btn-game-amber w-full sm:w-auto text-emerald-950 font-game font-extrabold px-10 py-4 rounded-2xl text-base sm:text-lg cursor-pointer">
+                        Lanjut ke Soal Berikutnya ➔
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Screen 5: Level Result Screen -->
+            <div id="screen-level-result" class="hidden game-main-card rounded-3xl shadow-2xl p-6 sm:p-8 text-center space-y-6">
+                <div class="text-5xl">🎖️</div>
+                <div>
+                    <span id="level-result-badge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full font-game uppercase tracking-wider">
+                        Hasil Level 1
+                    </span>
+                    <h2 id="level-result-title" class="font-game text-2xl sm:text-3xl font-extrabold text-emerald-800 mt-2">
+                        Level 1 Selesai!
+                    </h2>
+                    <p class="text-gray-600 text-sm mt-1">Berikut adalah ringkasan hasil pengerjaanmu untuk level ini:</p>
+                </div>
+
+                <!-- Statistics Grid for Level -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto">
+                    <div class="bg-emerald-50 border-2 border-emerald-200 p-3.5 rounded-2xl text-center shadow-sm">
+                        <span class="text-2xl block mb-1">✅</span>
+                        <span class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Jawaban Benar</span>
+                        <span id="lvl-res-correct" class="font-game text-2xl font-extrabold text-emerald-700">6</span>
+                    </div>
+
+                    <div class="bg-rose-50 border-2 border-rose-200 p-3.5 rounded-2xl text-center shadow-sm">
+                        <span class="text-2xl block mb-1">❌</span>
+                        <span class="text-[11px] font-bold text-rose-800 uppercase tracking-wider block">Jawaban Salah</span>
+                        <span id="lvl-res-wrong" class="font-game text-2xl font-extrabold text-rose-600">0</span>
+                    </div>
+
+                    <div class="bg-amber-50 border-2 border-amber-200 p-3.5 rounded-2xl text-center shadow-sm">
+                        <span class="text-2xl block mb-1">💡</span>
+                        <span class="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">Skor untuk Tips</span>
+                        <span id="lvl-res-tips" class="font-game text-2xl font-extrabold text-amber-600">0 Poin</span>
+                    </div>
+
+                    <div class="bg-teal-50 border-2 border-teal-200 p-3.5 rounded-2xl text-center shadow-sm">
+                        <span class="text-2xl block mb-1">⭐</span>
+                        <span class="text-[11px] font-bold text-teal-800 uppercase tracking-wider block">Skor Level Ini</span>
+                        <span id="lvl-res-score" class="font-game text-2xl font-extrabold text-teal-700">120</span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-300 rounded-2xl p-4 max-w-md mx-auto text-xs text-amber-900 font-medium shadow-inner">
+                    🏆 Total Akumulasi Skor Keseluruhan: <span id="lvl-res-total-score" class="font-bold text-emerald-800 text-sm">120 Poin</span>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3.5 pt-3">
+                    <button id="btn-next-level" onclick="proceedToNextLevel()" class="btn-game-primary text-white font-game font-bold px-7 py-3.5 rounded-2xl flex items-center gap-2 cursor-pointer text-sm sm:text-base">
+                        <span>Lanjut ke Level Berikutnya</span> ➔
+                    </button>
+                    <button onclick="retryCurrentLevel()" class="btn-game-amber text-white font-game font-bold px-6 py-3.5 rounded-2xl flex items-center gap-2 cursor-pointer text-sm sm:text-base">
+                        🔄 Ulangi Level Ini
+                    </button>
+                    <button onclick="goToLevelSelect()" class="btn-game-secondary font-game font-bold px-6 py-3.5 rounded-2xl cursor-pointer text-sm sm:text-base">
+                        📋 Pilih Level
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen 6: Final Grand Victory Result -->
+            <div id="screen-result" class="hidden game-main-card rounded-3xl shadow-2xl p-8 text-center space-y-6">
+                <div class="text-6xl">🏆</div>
+                <h2 class="font-game text-3xl font-extrabold text-emerald-800">
+                    Petualangan Berbagi Selesai!
+                </h2>
+                <p class="text-gray-600 text-base">
+                    Selamat! Kamu telah menyelesaikan seluruh level petualangan pembagian di Desa Pendem!
+                </p>
+
+                <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-6 max-w-sm mx-auto shadow-inner space-y-2">
+                    <div id="result-stars" class="text-3xl text-yellow-500">⭐ ⭐ ⭐</div>
+                    <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider">Total Skor Akhir</div>
+                    <div id="result-score" class="font-game font-extrabold text-4xl text-emerald-700">480</div>
+                </div>
+
+                <div class="flex justify-center gap-4 pt-4">
+                    <button onclick="goToLevelSelect()" class="btn-game-primary text-white font-game font-bold px-7 py-3.5 rounded-2xl cursor-pointer text-base">
+                        🎮 Pilih Level Lain
+                    </button>
+                    <button onclick="goToCover()" class="btn-game-secondary font-game font-bold px-6 py-3.5 rounded-2xl cursor-pointer text-base">
+                        🏠 Halaman Utama
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Dialog Popup -->
+    <div id="modal-dialog" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl border-4 border-emerald-600 max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+            <div id="modal-icon" class="text-5xl">⚠️</div>
+            <h3 id="modal-title" class="font-game text-xl font-bold text-gray-800">Pemberitahuan</h3>
+            <p id="modal-message" class="text-sm text-gray-600 leading-relaxed">Pesan modal...</p>
+            <div id="modal-actions" class="flex justify-center gap-2 pt-2">
+                <button id="modal-btn-ok" onclick="closeModal()" class="btn-game-primary text-white font-game font-bold px-7 py-3 rounded-xl cursor-pointer">
+                    Mengerti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Question Form (Editor) -->
+    <div id="modal-question-form" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl border-4 border-teal-600 max-w-xl w-full p-6 shadow-2xl space-y-4 my-8">
+            <div class="flex justify-between items-center border-b pb-3 border-gray-200">
+                <h3 id="modal-qform-title" class="font-game text-xl font-bold text-teal-900">
+                    Tambah Soal Baru
+                </h3>
+                <button onclick="closeQuestionModal()" class="text-gray-400 hover:text-gray-600 text-lg p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="form-question" onsubmit="saveQuestionForm(event)" class="space-y-4">
+                <input type="hidden" id="qform-edit-index" value="-1">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Tingkat Level / Lingkungan</label>
+                        <select id="qform-level" class="w-full bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 text-xs font-bold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" onchange="onQFormLevelChange()">
+                            <option value="1">Level 1: Lingkungan RT</option>
+                            <option value="2">Level 2: Lingkungan RW</option>
+                            <option value="3">Level 3: Lingkungan Desa</option>
+                            <option value="4">Level 4: Lingkungan Kelurahan</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Tipe Soal</label>
+                        <select id="qform-type" class="w-full bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 text-xs font-bold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="Bentuk Angka">Bentuk Angka (Jawaban Langsung)</option>
+                            <option value="Soal Cerita">Soal Cerita (Isi Kalimat Pembagian)</option>
+                            <option value="Soal HOTS 2-Langkah">Soal HOTS 2-Langkah (Disisihkan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Judul Soal</label>
+                            <input type="text" id="qform-title" required placeholder="Contoh: Soal 1: Panen Apel" class="w-full border border-gray-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Emoji Benda</label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="qform-emoji" required placeholder="🍎" value="🍎" oninput="updateEmojiPreview(this.value)" class="w-full border-2 border-emerald-400 bg-emerald-50/50 rounded-xl p-2 text-sm text-center text-xl font-bold focus:ring-2 focus:ring-teal-500 focus:outline-none" title="Ketik atau tempel emoji bebas di sini">
+                                <div id="qform-emoji-preview" class="w-10 h-10 flex-shrink-0 bg-amber-100 border-2 border-amber-300 rounded-xl flex items-center justify-center text-2xl shadow-xs" title="Pratinjau Emoji">
+                                    🍎
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Pick Palette for Village Harvest & Items -->
+                    <div class="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-2.5 space-y-1.5">
+                        <div class="flex justify-between items-center text-[11px] font-bold text-emerald-900">
+                            <span class="flex items-center gap-1">
+                                <span>🎨</span> Pilih Cepat Emoji Benda (atau ketik langsung di atas):
+                            </span>
+                            <span class="text-[10px] text-gray-500 font-normal">Klik untuk memilih</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 justify-start text-lg select-none">
+                            <button type="button" onclick="selectQuickEmoji('🍎')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Apel">🍎</button>
+                            <button type="button" onclick="selectQuickEmoji('🍌')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Pisang">🍌</button>
+                            <button type="button" onclick="selectQuickEmoji('🍊')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Jeruk">🍊</button>
+                            <button type="button" onclick="selectQuickEmoji('🍓')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Stroberi">🍓</button>
+                            <button type="button" onclick="selectQuickEmoji('🌾')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Beras / Padi">🌾</button>
+                            <button type="button" onclick="selectQuickEmoji('🥬')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Sayur">🥬</button>
+                            <button type="button" onclick="selectQuickEmoji('🥕')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Wortel">🥕</button>
+                            <button type="button" onclick="selectQuickEmoji('🌽')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Jagung">🌽</button>
+                            <button type="button" onclick="selectQuickEmoji('🍅')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Tomat">🍅</button>
+                            <button type="button" onclick="selectQuickEmoji('🥔')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Kentang">🥔</button>
+                            <button type="button" onclick="selectQuickEmoji('🥚')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Telur">🥚</button>
+                            <button type="button" onclick="selectQuickEmoji('🍯')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Madu">🍯</button>
+                            <button type="button" onclick="selectQuickEmoji('🐟')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Ikan">🐟</button>
+                            <button type="button" onclick="selectQuickEmoji('🪵')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Kayu Bakar">🪵</button>
+                            <button type="button" onclick="selectQuickEmoji('🌱')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Bibit Tanaman">🌱</button>
+                            <button type="button" onclick="selectQuickEmoji('🌸')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Bunga">🌸</button>
+                            <button type="button" onclick="selectQuickEmoji('🥥')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Kelapa">🥥</button>
+                            <button type="button" onclick="selectQuickEmoji('🍞')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Roti">🍞</button>
+                            <button type="button" onclick="selectQuickEmoji('⭐')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Bintang">⭐</button>
+                            <button type="button" onclick="selectQuickEmoji('🎁')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Kado">🎁</button>
+                            <button type="button" onclick="selectQuickEmoji('📦')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Kotak / Paket">📦</button>
+                            <button type="button" onclick="selectQuickEmoji('🪙')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Koin">🪙</button>
+                            <button type="button" onclick="selectQuickEmoji('🌻')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Bunga Matahari">🌻</button>
+                            <button type="button" onclick="selectQuickEmoji('🍇')" class="w-8 h-8 rounded-lg bg-white border border-gray-200 hover:border-emerald-500 hover:scale-110 active:scale-95 transition flex items-center justify-center cursor-pointer shadow-xs" title="Anggur">🍇</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Naskah Soal / Cerita</label>
+                    <textarea id="qform-text" required rows="3" placeholder="Tuliskan cerita soal di sini..." class="w-full border border-gray-300 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-amber-50 p-3 rounded-2xl border border-amber-200">
+                    <div>
+                        <label class="block text-[11px] font-bold text-amber-900 mb-1">Total Benda Pembagian</label>
+                        <input type="number" id="qform-total" required min="1" max="100" value="6" class="w-full border border-amber-300 rounded-xl p-2 text-xs font-bold text-center focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-amber-900 mb-1">Isi Tiap Wadah (Grup)</label>
+                        <input type="number" id="qform-groupsize" required min="1" max="20" value="2" class="w-full border border-amber-300 rounded-xl p-2 text-xs font-bold text-center focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <div id="qform-hots-reserve-group" class="col-span-2 sm:col-span-1">
+                        <label class="block text-[11px] font-bold text-rose-900 mb-1">Benda Disisihkan (HOTS)</label>
+                        <input type="number" id="qform-reserve" min="0" max="20" value="0" class="w-full border border-rose-300 rounded-xl p-2 text-xs font-bold text-center bg-rose-50 text-rose-900 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2.5">
+                    <button type="button" onclick="closeQuestionModal()" class="btn-game-secondary font-game text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn-game-primary text-white font-game text-xs font-bold px-6 py-2.5 rounded-xl cursor-pointer shadow-md">
+                        💾 Simpan Soal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden mount root for Vite React framework compatibility -->
+    <div id="root" class="hidden"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Game Scripts -->
+    <script>
+        // Web Audio Synthesizer Engine
+        function getAudioContext() {
+            if (!window._sharedAudioCtx) {
+                window._sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (window._sharedAudioCtx.state === 'suspended') {
+                window._sharedAudioCtx.resume();
+            }
+            return window._sharedAudioCtx;
+        }
+
+        // Password akses Kelola Soal
+        const ADMIN_PASSWORD = "Qwerty01"; 
+
+        function promptPasswordKelolaSoal() {
+            // Hapus modal lama jika ada
+            const existingModal = document.getElementById('passwordModal');
+            if (existingModal) existingModal.remove();
+
+            // Buat UI Modal Password
+            const modalHtml = `
+              <div id="passwordModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-gray-800 transition-all transform scale-100 border-4 border-amber-500">
+                  <div class="text-center mb-4">
+                    <div class="w-14 h-14 bg-amber-100 border-2 border-amber-300 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold shadow-sm">
+                      🔒
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 font-game">Akses Kelola Soal</h3>
+                    <p class="text-xs text-gray-600 mt-1">Masukkan kata sandi untuk membuka menu pengelola soal.</p>
+                  </div>
+                  <div class="mb-5">
+                    <div class="relative flex items-center">
+                      <input type="password" id="inputAdminPassword" placeholder="Masukkan kata sandi..." class="w-full pl-4 pr-11 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:outline-none text-sm transition">
+                      <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 text-gray-500 hover:text-amber-700 p-1 cursor-pointer focus:outline-none text-base" title="Lihat / Samarkan Sandi">
+                        <i id="passwordToggleIcon" class="fa-solid fa-eye"></i>
+                      </button>
+                    </div>
+                    <p id="passwordError" class="text-xs text-red-600 mt-1.5 hidden font-bold text-center">⚠️ Sandi salah! Silakan periksa dan coba lagi.</p>
+                  </div>
+                  <div class="flex gap-2.5">
+                    <button onclick="closePasswordModal()" class="btn-game-secondary w-1/2 py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer">Batal</button>
+                    <button onclick="verifyAdminPassword()" class="btn-game-amber w-1/2 py-2.5 text-white rounded-xl font-bold text-xs sm:text-sm cursor-pointer">Masuk</button>
+                  </div>
+                </div>
+              </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const inputEl = document.getElementById('inputAdminPassword');
+            if (inputEl) inputEl.focus();
+
+            // Jalankan verifikasi saat menekan tombol Enter
+            inputEl.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') verifyAdminPassword();
+            });
+        }
+
+        function togglePasswordVisibility() {
+            const input = document.getElementById('inputAdminPassword');
+            const icon = document.getElementById('passwordToggleIcon');
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+                icon.title = 'Samarkan sandi';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+                icon.title = 'Lihat sandi';
+            }
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            if (modal) modal.remove();
+        }
+
+        function verifyAdminPassword() {
+            const input = document.getElementById('inputAdminPassword');
+            const err = document.getElementById('passwordError');
+            
+            if (input.value === ADMIN_PASSWORD) {
+                closePasswordModal();
+                goToEditor();
+            } else {
+                err.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // 1. Menu Selection & Button Click Sound
+        function playMenuSelectSound() {
+            try {
+                const ctx = getAudioContext();
+                const master = getAudioMaster();
+                const now = ctx.currentTime;
+                // Pop tone dengan nada naik gembira
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(520, now);
+                osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+                osc.connect(gain);
+                gain.connect(master);
+                osc.start(now);
+                osc.stop(now + 0.09);
+
+                // Sentuhan kilau nada tinggi (sparkle harmonic)
+                const oscSparkle = ctx.createOscillator();
+                const gainSparkle = ctx.createGain();
+                oscSparkle.type = 'sine';
+                oscSparkle.frequency.setValueAtTime(1046, now);
+                gainSparkle.gain.setValueAtTime(0.06, now);
+                gainSparkle.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+                oscSparkle.connect(gainSparkle);
+                gainSparkle.connect(master);
+                oscSparkle.start(now);
+                oscSparkle.stop(now + 0.06);
+            } catch(e) {}
+        }
+        window.playMenuSelectSound = playMenuSelectSound;
+
+        // 2. Click Item Sound (Memindahkan Benda) - Volume seimbang & selaras
+        function playItemClickSound() {
+            try {
+                const ctx = getAudioContext();
+                const master = getAudioMaster();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(480, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                osc.connect(gain);
+                gain.connect(master);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } catch(e) {}
+        }
+
+        // 3. Check Answer Button Click Sound - Volume seimbang
+        function playCheckClickSound() {
+            try {
+                const ctx = getAudioContext();
+                const master = getAudioMaster();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(620, now);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                osc.connect(gain);
+                gain.connect(master);
+                osc.start(now);
+                osc.stop(now + 0.07);
+            } catch(e) {}
+        }
+
+        // 4. Correct Answer Sound (Happy Arpeggio Chime & Sparkle Fanfare) - Dikalibrasi agar tidak meledak keras
+        function playCorrectSound() {
+            try {
+                const ctx = getAudioContext();
+                const master = getAudioMaster();
+                const now = ctx.currentTime;
+                // Arpeggio nada gembira: C5, E5, G5, C6 (Do Mi Sol Do tinggi)
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.09);
+
+                    const startTime = now + i * 0.09;
+                    const duration = (i === notes.length - 1) ? 0.38 : 0.20;
+                    gain.gain.setValueAtTime(0.14, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                    osc.connect(gain);
+                    gain.connect(master);
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                });
+
+                // Lonceng kemilau di akhir (C7) dengan volume halus
+                const bell = ctx.createOscillator();
+                const bellGain = ctx.createGain();
+                bell.type = 'triangle';
+                bell.frequency.setValueAtTime(2093, now + 0.27);
+                bellGain.gain.setValueAtTime(0.07, now + 0.27);
+                bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                bell.connect(bellGain);
+                bellGain.connect(master);
+                bell.start(now + 0.27);
+                bell.stop(now + 0.55);
+            } catch(e) {}
+        }
+
+        // 5. Wrong Answer Sound (Gentle Descending Uh-Oh Error Tone) - Dikalibrasi agar ramah & konsisten
+        function playWrongSound() {
+            try {
+                const ctx = getAudioContext();
+                const master = getAudioMaster();
+                const now = ctx.currentTime;
+                // Nada 1: Peringatan lembut (Eb4 ~ 310Hz)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'triangle';
+                osc1.frequency.setValueAtTime(320, now);
+                osc1.frequency.exponentialRampToValueAtTime(290, now + 0.12);
+                gain1.gain.setValueAtTime(0.15, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                osc1.connect(gain1);
+                gain1.connect(master);
+                osc1.start(now);
+                osc1.stop(now + 0.14);
+
+                // Nada 2: Glissando menurun ramah anak (240Hz turun ke 160Hz) dengan gelombang halus
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(240, now + 0.12);
+                osc2.frequency.exponentialRampToValueAtTime(160, now + 0.32);
+                gain2.gain.setValueAtTime(0.14, now + 0.12);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc2.connect(gain2);
+                gain2.connect(master);
+                osc2.start(now + 0.12);
+                osc2.stop(now + 0.35);
+            } catch(e) {}
+        }
+
+        // 6. Applause Sound Effect (Victory Fanfare + Crowd Clapping) - Dikalibrasi seragam
+        function playApplauseSound() {
+            try {
+                const ctx = getAudioContext();
+                const master = getAudioMaster();
+                
+                // Fanfare melody: C4, E4, G4, C5
+                const fanfareNotes = [261.63, 329.63, 392.00, 523.25];
+                fanfareNotes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+                    const startTime = ctx.currentTime + i * 0.1;
+                    const duration = (i === fanfareNotes.length - 1) ? 0.5 : 0.12;
+                    gain.gain.setValueAtTime(0.14, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                    osc.connect(gain);
+                    gain.connect(master);
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                });
+
+                // Synthesized noise clapping effect - level halus & tidak bising
+                const bufferSize = ctx.sampleRate * 1.8;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 1100;
+                filter.Q.value = 0.9;
+
+                const noiseGain = ctx.createGain();
+                const now = ctx.currentTime + 0.35;
+                noiseGain.gain.setValueAtTime(0.01, now);
+                noiseGain.gain.linearRampToValueAtTime(0.08, now + 0.25);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(master);
+
+                noise.start(now);
+                noise.stop(now + 1.8);
+            } catch(e) {}
+        }
+
+        const defaultQuestionBank = {
+            1: [
+                {
+                    title: "Soal 1: Pembagian Karung Beras Desa",
+                    type: "Bentuk Angka",
+                    emoji: "🍚",
+                    total: 6,
+                    groupSize: 2,
+                    text: "Pak Kades menyiapkan 6 karung beras dari lumbung Desa Pendem. Sebanyak 2 karung beras dibagikan ke setiap keluarga. Berapa keluarga yang menerima beras?"
+                },
+                {
+                    title: "Soal 2: Keranjang Sayur Segar Kebun",
+                    type: "Soal Cerita",
+                    emoji: "🥬",
+                    total: 8,
+                    groupSize: 4,
+                    text: "Warga memanen 8 keranjang sayuran segar (wortel, sawi, dan tomat). Sayuran dikemas ke dalam wadah masing-masing berisi 4 keranjang sayur. Berapa wadah yang dibutuhkan?"
+                },
+                {
+                    title: "Soal 3: Keranjang Buah Segar Desa",
+                    type: "Bentuk Angka",
+                    emoji: "🧺",
+                    total: 9,
+                    groupSize: 3,
+                    text: "Petani memetik 9 keranjang buah manis. Buah dimasukkan ke beberapa wadah dengan isi 3 keranjang buah per wadah. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 4: Keranjang Telur Ayam Kampung",
+                    type: "Soal Cerita",
+                    emoji: "🥚",
+                    total: 10,
+                    groupSize: 2,
+                    text: "Peternak desa mengumpulkan 10 keranjang telur ayam kampung. Telur dibagikan ke wadah dengan isi 2 keranjang tiap wadah. Berapa wadah yang dihasilkan?"
+                },
+                {
+                    title: "Soal 5: Toples Madu Alami Pendem",
+                    type: "Bentuk Angka",
+                    emoji: "🍯",
+                    total: 12,
+                    groupSize: 3,
+                    text: "Pak Wijaya memanen 12 toples madu lebah alami. Madu dikemas ke dalam wadah isi 3 toples. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 6: Ikan Segar Kolam Desa",
+                    type: "Soal Cerita",
+                    emoji: "🐟",
+                    total: 12,
+                    groupSize: 4,
+                    text: "Warga menjaring 12 ekor ikan mas segar dari kolam desa. Ikan dimasukkan ke wadah masing-masing berisi 4 ekor. Berapa wadah ikan yang disiapkan?"
+                }
+            ],
+            2: [
+                {
+                    title: "Soal 1: Ikat Kayu Bakar Desa",
+                    type: "Bentuk Angka",
+                    emoji: "🪵",
+                    total: 10,
+                    groupSize: 5,
+                    text: "Perajin mengumpulkan 10 ikat kayu bakar. Kayu bakar dimasukkan ke wadah dengan isi 5 ikat per wadah. Berapa wadah yang dibutuhkan?"
+                },
+                {
+                    title: "Soal 2: Karung Bibit Tanaman Subur",
+                    type: "Soal Cerita",
+                    emoji: "🌱",
+                    total: 12,
+                    groupSize: 2,
+                    text: "Kelompok tani menyiapkan 12 karung bibit tanaman untuk penghijauan. Bibit dibagikan dengan isi 2 karung per wadah. Berapa wadah bibit yang dihasilkan?"
+                },
+                {
+                    title: "Soal 3: Keranjang Sayur Segar Balai Desa",
+                    type: "Bentuk Angka",
+                    emoji: "🥬",
+                    total: 15,
+                    groupSize: 3,
+                    text: "Ibu Kades membagikan 15 keranjang sayuran segar kepada warga. Setiap wadah diisi 3 keranjang sayur. Berapa wadah yang terisi penuh?"
+                },
+                {
+                    title: "Soal 4: Keranjang Telur Segar",
+                    type: "Soal Cerita",
+                    emoji: "🥚",
+                    total: 14,
+                    groupSize: 2,
+                    text: "Warga mengumpulkan 14 keranjang telur segar. Telur dikelompokkan ke wadah masing-masing berisi 2 keranjang. Berapa wadah yang didapat?"
+                },
+                {
+                    title: "Soal 5: Panen Buah Jeruk Manis",
+                    type: "Bentuk Angka",
+                    emoji: "🍊",
+                    total: 16,
+                    groupSize: 4,
+                    text: "Petani memetik 16 keranjang jeruk manis dari kebun desa. Jeruk dikemas ke wadah isi 4 keranjang. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 6: Toples Madu Alami Sekarputih",
+                    type: "Soal Cerita",
+                    emoji: "🍯",
+                    total: 18,
+                    groupSize: 3,
+                    text: "Pak Kades membagikan 18 toples madu alami. Madu dimasukkan ke wadah masing-masing berisi 3 toples. Berapa wadah yang dibutuhkan?"
+                }
+            ],
+            3: [
+                {
+                    title: "Soal 1: Karung Beras Panen Raya",
+                    type: "Bentuk Angka",
+                    emoji: "🍚",
+                    total: 18,
+                    groupSize: 6,
+                    text: "Lumbung Desa Pendem menyiapkan 18 karung beras hasil panen raya. Setiap wadah diisi 6 karung beras. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 2: Susu Murni Peternakan Batu",
+                    type: "Soal Cerita",
+                    emoji: "🥛",
+                    total: 20,
+                    groupSize: 4,
+                    text: "Peternak mengumpulkan 20 botol susu murni sapi. Susu dikemas ke wadah masing-masing berisi 4 botol. Berapa wadah susu yang dapat dibuat?"
+                },
+                {
+                    title: "Soal 3: Ikan Segar Tambak Warga",
+                    type: "Bentuk Angka",
+                    emoji: "🐟",
+                    total: 20,
+                    groupSize: 5,
+                    text: "Warga memanen 20 ekor ikan segar dari tambak. Ikan dimasukkan ke wadah masing-masing berisi 5 ekor. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 4: Ikat Kayu Bakar Perapian",
+                    type: "Soal Cerita",
+                    emoji: "🪵",
+                    total: 24,
+                    groupSize: 6,
+                    text: "Warga menyiapkan 24 ikat kayu bakar untuk pos ronda. Kayu dikelompokkan ke wadah isi 6 ikat. Berapa wadah kayu yang dihasilkan?"
+                },
+                {
+                    title: "Soal 5: Keranjang Sayur Kebun Organik",
+                    type: "Bentuk Angka",
+                    emoji: "🥬",
+                    total: 24,
+                    groupSize: 8,
+                    text: "Kelompok tani membagi 24 keranjang sayur ke dalam wadah berisi 8 keranjang tiap wadah. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 6: Keranjang Buah Apel Manalagi",
+                    type: "Soal Cerita",
+                    emoji: "🍎",
+                    total: 30,
+                    groupSize: 5,
+                    text: "Pak Kades memanen 30 keranjang apel segar. Apel dimasukkan ke wadah dengan isi 5 keranjang tiap wadah. Berapa wadah apel yang terkumpul?"
+                }
+            ],
+            4: [
+                {
+                    title: "Soal 1: Karung Beras & Cadangan Kantor (HOTS)",
+                    type: "Soal HOTS 2-Langkah",
+                    emoji: "🍚",
+                    total: 12,
+                    actualTotal: 13,
+                    reserve: 1,
+                    groupSize: 3,
+                    hots: true,
+                    text: "Pak Kades membawa 13 karung beras dari lumbung. Sebanyak 1 karung disisihkan ke Area Cadangan untuk contoh kantor desa. Sisa beras dibagikan ke wadah berisi 3 karung. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 2: Keranjang Sayur & Cadangan Dapur (HOTS)",
+                    type: "Soal HOTS 2-Langkah",
+                    emoji: "🥬",
+                    total: 15,
+                    actualTotal: 17,
+                    reserve: 2,
+                    groupSize: 5,
+                    hots: true,
+                    text: "Ibu PKK memanen 17 keranjang sayur. Sebanyak 2 keranjang disisihkan ke Area Cadangan untuk dapur umum. Sisa sayur dikemas ke wadah isi 5 keranjang. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 3: Toples Madu & Cadangan Pameran (HOTS)",
+                    type: "Soal HOTS 2-Langkah",
+                    emoji: "🍯",
+                    total: 18,
+                    actualTotal: 19,
+                    reserve: 1,
+                    groupSize: 6,
+                    hots: true,
+                    text: "Peternak lebah membawa 19 toples madu. Sebanyak 1 toples disisihkan ke Area Cadangan untuk pameran desa. Sisa madu dimasukkan ke wadah isi 6 toples. Berapa jumlah wadahnya?"
+                },
+                {
+                    title: "Soal 4: Keranjang Telur & Cadangan Posyandu (HOTS)",
+                    type: "Soal HOTS 2-Langkah",
+                    emoji: "🥚",
+                    total: 20,
+                    actualTotal: 21,
+                    reserve: 1,
+                    groupSize: 4,
+                    hots: true,
+                    text: "Warga mengumpulkan 21 keranjang telur ayam. Sebanyak 1 keranjang disisihkan ke Area Cadangan untuk gizi posyandu. Sisa telur dikelompokkan ke wadah isi 4 keranjang. Berapa wadahnya?"
+                },
+                {
+                    title: "Soal 5: Ikan Segar & Cadangan Bibit Kolam (HOTS)",
+                    type: "Soal HOTS 2-Langkah",
+                    emoji: "🐟",
+                    total: 24,
+                    actualTotal: 26,
+                    reserve: 2,
+                    groupSize: 6,
+                    hots: true,
+                    text: "Warga memanen 26 ekor ikan segar. Sebanyak 2 ekor disisihkan ke Area Cadangan untuk induk pembibitan. Sisa ikan dikemas ke wadah isi 6 ekor. Berapa wadah yang terisi?"
+                },
+                {
+                    title: "Soal 6: Karung Bibit & Cadangan Kebun Desa (HOTS)",
+                    type: "Soal HOTS 2-Langkah",
+                    emoji: "🌱",
+                    total: 24,
+                    actualTotal: 27,
+                    reserve: 3,
+                    groupSize: 8,
+                    hots: true,
+                    text: "Petani menyiapkan 27 karung bibit tanaman. Sebanyak 3 karung disisihkan ke Area Cadangan untuk kebun percontohan. Sisa bibit dimasukkan ke wadah isi 8 karung. Berapa wadah yang dibutuhkan?"
+                }
+            ]
+        };
+
+        // State variables
+        let questionBank = {};
+        let currentLevel = 1;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let totalQuestions = 6;
+        let currentQuestionData = null;
+
+        // Editor State
+        let selectedEditorLevel = 1;
+
+        // Stats tracking per level
+        let levelCorrectCount = 0;
+        let levelWrongCount = 0;
+        let levelTipScoreSpent = 0;
+        let levelScoreGained = 0;
+
+        let itemsLeft = 0;
+        let reservedItems = [];
+        let containers = [];
+        let activeContainerIndex = 0;
+        let hintUnlocked = false;
+
+        function loadSavedQuestionBank() {
+            try {
+                const saved = localStorage.getItem('desa_pendem_questions_v2');
+                if (saved) {
+                    questionBank = JSON.parse(saved);
+                    let migrated = false;
+                    for (let lvl in questionBank) {
+                        if (Array.isArray(questionBank[lvl])) {
+                            questionBank[lvl].forEach(q => {
+                                if (q.text && q.text.includes("Desa Harmoni")) {
+                                    q.text = q.text.replace(/Desa Harmoni/g, "Desa Pendem");
+                                    migrated = true;
+                                }
+                            });
+                        }
+                    }
+                    if (migrated) {
+                        saveQuestionBankToStorage();
+                    }
+                } else {
+                    questionBank = JSON.parse(JSON.stringify(defaultQuestionBank));
+                }
+            } catch(e) {
+                questionBank = JSON.parse(JSON.stringify(defaultQuestionBank));
+            }
+            updateLevelBadges();
+        }
+
+        function saveQuestionBankToStorage() {
+            try {
+                localStorage.setItem('desa_pendem_questions_v2', JSON.stringify(questionBank));
+            } catch(e) {}
+            updateLevelBadges();
+        }
+
+        function updateLevelBadges() {
+            for (let lvl = 1; lvl <= 4; lvl++) {
+                const badge = document.getElementById(`badge-count-lvl-${lvl}`);
+                if (badge && questionBank[lvl]) {
+                    badge.innerText = `${questionBank[lvl].length} Soal`;
+                }
+            }
+        }
+
+        function showScreen(screenId) {
+            const screens = ['screen-cover', 'screen-levels', 'screen-editor', 'screen-game', 'screen-level-result', 'screen-result'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(screenId);
+            if (target) target.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goToCover() {
+            const stats = document.getElementById('header-stats');
+            if (stats) stats.classList.add('hidden');
+            showScreen('screen-cover');
+        }
+
+        function goToLevelSelect() {
+            updateLevelBadges();
+            const stats = document.getElementById('header-stats');
+            if (stats) stats.classList.remove('hidden');
+            showScreen('screen-levels');
+        }
+
+        function goToEditor() {
+            const stats = document.getElementById('header-stats');
+            if (stats) stats.classList.add('hidden');
+            showScreen('screen-editor');
+            renderEditorList();
+        }
+
+        function selectLevel(levelNum) {
+            if (!questionBank[levelNum] || questionBank[levelNum].length === 0) {
+                showModal("Soal Kosong", `Belum ada soal pada Level ${levelNum}! Silakan tambahkan soal melalui 'Menu Kelola Soal'.`, "📝");
+                return;
+            }
+
+            currentLevel = levelNum;
+            currentQuestionIndex = 0;
+            totalQuestions = questionBank[currentLevel].length;
+            
+            // Reset level stats
+            levelCorrectCount = 0;
+            levelWrongCount = 0;
+            levelTipScoreSpent = 0;
+            levelScoreGained = 0;
+
+            document.getElementById('stat-level').innerText = currentLevel;
+            document.getElementById('stat-score').innerText = score;
+            document.getElementById('header-stats').classList.remove('hidden');
+            showScreen('screen-game');
+            loadQuestion();
+        }
+
+        function showModal(title, message, icon = '⚠️') {
+            document.getElementById('modal-icon').innerText = icon;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = `
+                <button onclick="closeModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-game font-bold px-6 py-2.5 rounded-xl transition shadow active:scale-95">
+                    Mengerti
+                </button>
+            `;
+            
+            document.getElementById('modal-dialog').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-dialog').classList.add('hidden');
+        }
+
+        function speakNarration() {
+            const text = document.getElementById('narration-text').innerText;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'id-ID';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showModal("Informasi Suara", "Fitur pembaca suara tidak didukung pada peramban ini.", "ℹ️");
+            }
+        }
+
+        function switchEditorLevel(levelNum) {
+            selectedEditorLevel = levelNum;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`editor-tab-${i}`);
+                if (btn) {
+                    if (i === levelNum) {
+                        btn.className = "px-4 py-2 rounded-xl font-game font-bold text-xs sm:text-sm transition bg-teal-600 text-white shadow";
+                    } else {
+                        btn.className = "px-4 py-2 rounded-xl font-game font-bold text-xs sm:text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200";
+                    }
+                }
+            }
+            renderEditorList();
+        }
+
+        function renderEditorList() {
+            const container = document.getElementById('editor-question-list');
+            container.innerHTML = '';
+
+            const list = questionBank[selectedEditorLevel] || [];
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                        <p class="font-game text-sm font-semibold">Belum ada soal pada level ini</p>
+                        <button onclick="openQuestionModal(-1)" class="mt-2 text-teal-600 font-bold text-xs underline">➕ Tambah Soal Pertama</button>
+                    </div>
+                `;
+                return;
+            }
+
+            list.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-teal-50/80 border-2 border-teal-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-teal-400 transition shadow-sm";
+                
+                const leftDiv = document.createElement('div');
+                leftDiv.className = "flex items-start space-x-3 flex-grow";
+                leftDiv.innerHTML = `
+                    <div class="w-10 h-10 bg-white rounded-xl border border-teal-300 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
+                        ${q.emoji || '📦'}
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-game font-bold text-teal-900 text-sm sm:text-base">${q.title}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${q.hots ? 'bg-rose-200 text-rose-800' : 'bg-emerald-200 text-emerald-800'}">${q.type}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-0.5 line-clamp-2">${q.text}</p>
+                        <div class="text-[11px] font-semibold text-teal-700 mt-1 flex items-center gap-3">
+                            <span>📦 Total Benda: <strong>${q.hots ? (q.actualTotal || (q.total + q.reserve)) : q.total}</strong></span>
+                            <span>📥 Isi Wadah: <strong>${q.groupSize}</strong></span>
+                            ${q.hots ? `<span>📌 Disisihkan: <strong>${q.reserve}</strong></span>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                const rightDiv = document.createElement('div');
+                rightDiv.className = "flex items-center space-x-2 w-full sm:w-auto justify-end flex-shrink-0";
+                rightDiv.innerHTML = `
+                    <button onclick="openQuestionModal(${idx})" class="btn-game-amber text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-solid fa-pen text-[11px]"></i>
+                        <span>Edit</span>
+                    </button>
+                    <button onclick="deleteQuestion(${idx})" class="btn-game-rose text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1 cursor-pointer">
+                        <i class="fa-solid fa-trash text-[11px]"></i>
+                        <span>Hapus</span>
+                    </button>
+                `;
+
+                card.appendChild(leftDiv);
+                card.appendChild(rightDiv);
+                container.appendChild(card);
+            });
+        }
+
+        function onQFormLevelChange() {
+            const lvl = parseInt(document.getElementById('qform-level').value);
+            const typeSelect = document.getElementById('qform-type');
+            if (lvl === 4) {
+                typeSelect.value = "Soal HOTS 2-Langkah";
+                document.getElementById('qform-hots-reserve-group').classList.remove('hidden');
+            } else {
+                if (typeSelect.value === "Soal HOTS 2-Langkah") {
+                    typeSelect.value = "Soal Cerita";
+                }
+                document.getElementById('qform-hots-reserve-group').classList.add('hidden');
+            }
+        }
+
+        function openQuestionModal(editIndex = -1) {
+            document.getElementById('qform-edit-index').value = editIndex;
+            document.getElementById('qform-level').value = selectedEditorLevel;
+
+            if (editIndex >= 0 && questionBank[selectedEditorLevel] && questionBank[selectedEditorLevel][editIndex]) {
+                const q = questionBank[selectedEditorLevel][editIndex];
+                document.getElementById('modal-qform-title').innerText = "Edit Soal";
+                document.getElementById('qform-type').value = q.type || "Bentuk Angka";
+                document.getElementById('qform-title').value = q.title || "";
+                document.getElementById('qform-emoji').value = q.emoji || "🍎";
+                updateEmojiPreview(q.emoji || "🍎");
+                document.getElementById('qform-text').value = q.text || "";
+                document.getElementById('qform-total').value = q.total || 6;
+                document.getElementById('qform-groupsize').value = q.groupSize || 2;
+                document.getElementById('qform-reserve').value = q.reserve || 0;
+            } else {
+                document.getElementById('modal-qform-title').innerText = "Tambah Soal Baru";
+                document.getElementById('qform-title').value = `Soal ${(questionBank[selectedEditorLevel] ? questionBank[selectedEditorLevel].length : 0) + 1}: `;
+                document.getElementById('qform-emoji').value = "🍎";
+                updateEmojiPreview("🍎");
+                document.getElementById('qform-text').value = "";
+                document.getElementById('qform-total').value = 12;
+                document.getElementById('qform-groupsize').value = 3;
+                document.getElementById('qform-reserve').value = (selectedEditorLevel === 4) ? 1 : 0;
+            }
+
+            onQFormLevelChange();
+            document.getElementById('modal-question-form').classList.remove('hidden');
+        }
+
+        function selectQuickEmoji(emoji) {
+            const input = document.getElementById('qform-emoji');
+            if (input) {
+                input.value = emoji;
+                updateEmojiPreview(emoji);
+                input.focus();
+            }
+        }
+
+        function updateEmojiPreview(val) {
+            const preview = document.getElementById('qform-emoji-preview');
+            if (preview) {
+                preview.innerText = (val && val.trim()) ? val.trim() : '❓';
+            }
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('modal-question-form').classList.add('hidden');
+        }
+
+        function saveQuestionForm(e) {
+            e.preventDefault();
+            const editIdx = parseInt(document.getElementById('qform-edit-index').value);
+            const levelNum = parseInt(document.getElementById('qform-level').value);
+            const type = document.getElementById('qform-type').value;
+            const title = document.getElementById('qform-title').value.trim();
+            const emoji = document.getElementById('qform-emoji').value.trim() || '📦';
+            const text = document.getElementById('qform-text').value.trim();
+            const total = parseInt(document.getElementById('qform-total').value);
+            const groupSize = parseInt(document.getElementById('qform-groupsize').value);
+            const reserve = parseInt(document.getElementById('qform-reserve').value) || 0;
+
+            if (groupSize <= 0) {
+                showModal("Input Salah", "Isi tiap wadah harus lebih besar dari 0!", "⚠️");
+                return;
+            }
+
+            const isHots = (type === "Soal HOTS 2-Langkah" || levelNum === 4);
+            const actualTotal = isHots ? (total + reserve) : total;
+
+            const newQuestionObj = {
+                title,
+                type,
+                emoji,
+                total,
+                groupSize,
+                text
+            };
+
+            if (isHots) {
+                newQuestionObj.hots = true;
+                newQuestionObj.reserve = reserve;
+                newQuestionObj.actualTotal = actualTotal;
+            }
+
+            if (!questionBank[levelNum]) {
+                questionBank[levelNum] = [];
+            }
+
+            if (editIdx >= 0 && editIdx < questionBank[levelNum].length) {
+                questionBank[levelNum][editIdx] = newQuestionObj;
+            } else {
+                questionBank[levelNum].push(newQuestionObj);
+            }
+
+            saveQuestionBankToStorage();
+            closeQuestionModal();
+
+            if (selectedEditorLevel !== levelNum) {
+                switchEditorLevel(levelNum);
+            } else {
+                renderEditorList();
+            }
+
+            showModal("Berhasil Disimpan", "Soal telah berhasil diperbarui dan tersimpan!", "✅");
+        }
+
+        function deleteQuestion(index) {
+            const list = questionBank[selectedEditorLevel];
+            if (!list || !list[index]) return;
+
+            const qTitle = list[index].title;
+            const actions = document.getElementById('modal-actions');
+            
+            document.getElementById('modal-icon').innerText = "🗑️";
+            document.getElementById('modal-title').innerText = "Konfirmasi Hapus";
+            document.getElementById('modal-message').innerText = `Apakah kamu yakin ingin menghapus "${qTitle}"?`;
+            
+            actions.innerHTML = `
+                <button onclick="confirmDeleteQuestion(${index})" class="bg-rose-600 hover:bg-rose-700 text-white font-game font-bold px-5 py-2 rounded-xl transition shadow active:scale-95">
+                    Ya, Hapus
+                </button>
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-game font-bold px-5 py-2 rounded-xl transition">
+                    Batal
+                </button>
+            `;
+
+            document.getElementById('modal-dialog').classList.remove('hidden');
+        }
+
+        function confirmDeleteQuestion(index) {
+            closeModal();
+            if (questionBank[selectedEditorLevel]) {
+                questionBank[selectedEditorLevel].splice(index, 1);
+                saveQuestionBankToStorage();
+                renderEditorList();
+            }
+        }
+
+        function confirmResetQuestions() {
+            const actions = document.getElementById('modal-actions');
+            document.getElementById('modal-icon').innerText = "🔄";
+            document.getElementById('modal-title').innerText = "Reset Semua Soal";
+            document.getElementById('modal-message').innerText = "Apakah kamu yakin ingin mengembalikan semua soal ke set bawaan asli Desa Pendem?";
+
+            actions.innerHTML = `
+                <button onclick="executeResetQuestions()" class="bg-rose-600 hover:bg-rose-700 text-white font-game font-bold px-5 py-2 rounded-xl transition shadow active:scale-95">
+                    Ya, Reset Default
+                </button>
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-game font-bold px-5 py-2 rounded-xl transition">
+                    Batal
+                </button>
+            `;
+
+            document.getElementById('modal-dialog').classList.remove('hidden');
+        }
+
+        function executeResetQuestions() {
+            closeModal();
+            questionBank = JSON.parse(JSON.stringify(defaultQuestionBank));
+            saveQuestionBankToStorage();
+            renderEditorList();
+            showModal("Reset Selesai", "Semua soal berhasil dikembalikan ke data default!", "✅");
+        }
+
+        function loadQuestion() {
+            const levelList = questionBank[currentLevel] || [];
+            totalQuestions = levelList.length;
+
+            if (currentQuestionIndex >= totalQuestions) {
+                currentQuestionIndex = 0;
+            }
+
+            currentQuestionData = levelList[currentQuestionIndex];
+            hintUnlocked = false;
+            
+            // Hide feedback panel and reset hint box
+            document.getElementById('feedback-panel').classList.add('hidden');
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('hint-text').innerText = '';
+
+            // Update badges & counts
+            document.getElementById('question-type-badge').innerText = `Soal ${currentQuestionIndex + 1}/${totalQuestions}`;
+            document.getElementById('question-category-badge').innerText = currentQuestionData.type;
+            document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / totalQuestions) * 100}%`;
+
+            document.getElementById('item-emoji-display').innerText = currentQuestionData.emoji;
+            document.getElementById('story-title').innerText = currentQuestionData.title;
+            document.getElementById('story-text').innerText = currentQuestionData.text;
+
+            // Reset state arrays
+            reservedItems = [];
+            containers = [];
+            activeContainerIndex = 0;
+
+            if (currentQuestionData.hots && currentQuestionData.reserve > 0) {
+                itemsLeft = currentQuestionData.actualTotal || (currentQuestionData.total + currentQuestionData.reserve);
+            } else {
+                itemsLeft = currentQuestionData.total;
+            }
+
+            // Configure Right Side Badges based on Question Type
+            const mathBadge = document.getElementById('math-expression-badge');
+            const storyMathBadge = document.getElementById('story-math-input-badge');
+
+            if (currentQuestionData.type === "Bentuk Angka") {
+                mathBadge.classList.remove('hidden');
+                storyMathBadge.classList.add('hidden');
+                document.getElementById('math-num-total').innerText = currentQuestionData.total;
+                document.getElementById('math-num-size').innerText = currentQuestionData.groupSize;
+                const inputNum = document.getElementById('input-number-result');
+                if (inputNum) inputNum.value = '';
+                const feedbackElem = document.getElementById('number-input-feedback');
+                if (feedbackElem) {
+                    feedbackElem.innerText = 'Ketik hasil pembagian di atas';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-emerald-200';
+                }
+            } else {
+                mathBadge.classList.add('hidden');
+                storyMathBadge.classList.remove('hidden');
+                document.getElementById('input-story-total').value = '';
+                document.getElementById('input-story-size').value = '';
+                document.getElementById('input-story-result').value = '';
+                const feedbackElem = document.getElementById('story-input-feedback');
+                if (feedbackElem) {
+                    feedbackElem.innerText = 'Ketik kalimat pembagian berdasarkan cerita';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-amber-700';
+                }
+            }
+
+            // HOTS reserve box setup
+            const hotsBanner = document.getElementById('hots-step-banner');
+            const hotsReserveBox = document.getElementById('hots-reserve-box');
+            if (currentQuestionData.hots && currentQuestionData.reserve > 0) {
+                hotsBanner.classList.remove('hidden');
+                document.getElementById('hots-step-text').innerText = `Langkah 1: Baca cerita dan sisihkan benda cadangan ke Area Cadangan!`;
+                hotsReserveBox.classList.remove('hidden');
+            } else {
+                hotsBanner.classList.add('hidden');
+                hotsReserveBox.classList.add('hidden');
+            }
+
+            // Container setup
+            const addContainerBtn = document.getElementById('btn-add-container');
+            if (currentLevel === 1) {
+                addContainerBtn.classList.add('hidden');
+                containers.push({ capacity: currentQuestionData.groupSize, items: [] });
+            } else {
+                addContainerBtn.classList.remove('hidden');
+                containers.push({ capacity: currentQuestionData.groupSize, items: [] });
+            }
+
+            renderBoard();
+        }
+
+        function useHint() {
+            if (hintUnlocked) {
+                showModal("Tips Sudah Terbuka", "Petunjuk pengerjaan untuk soal ini sudah ditampilkan pada kotak kuning!", "💡");
+                return;
+            }
+
+            if (score < 20) {
+                showModal("Poin Tidak Cukup", `Poin kamu saat ini (${score} Poin) tidak cukup. Kamu membutuhkan minimal 20 Poin untuk membuka Tips!`, "🔒");
+                return;
+            }
+
+            score -= 20;
+            levelTipScoreSpent += 20;
+            document.getElementById('stat-score').innerText = score;
+            hintUnlocked = true;
+
+            let hintMsg = "";
+            if (currentQuestionData.hots) {
+                hintMsg = `Langkah 1: Sisihkan ${currentQuestionData.reserve} benda dari Meja Utama ke Area Cadangan.\nLangkah 2: Kelompokkan sisa benda di meja ke dalam wadah (masing-masing diisi ${currentQuestionData.groupSize} benda) hingga sisa benda di meja habis (0).\nLangkah 3: Hitung berapa wadah yang berhasil terisi penuh!`;
+            } else if (currentQuestionData.type === "Bentuk Angka") {
+                hintMsg = `Pindahkan benda dari Meja Utama ke dalam wadah masing-masing sebanyak ${currentQuestionData.groupSize} benda hingga meja menjadi kosong (0).\nBanyaknya wadah yang terisi penuh adalah hasil pembagian yang kamu cari!`;
+            } else {
+                hintMsg = `1. Temukan total awal benda dari cerita (${currentQuestionData.total}) dan isi per wadah (${currentQuestionData.groupSize}).\n2. Kelompokkan benda di meja ke wadah masing-masing berisi ${currentQuestionData.groupSize} benda.\n3. Susun kalimat pembagiannya: [ ${currentQuestionData.total} ] ÷ [ ${currentQuestionData.groupSize} ] = [ Hitung Wadah Terisi ].`;
+            }
+
+            document.getElementById('hint-text').innerText = hintMsg;
+            document.getElementById('hint-box').classList.remove('hidden');
+            showModal("Tips Berhasil Dibuka!", "20 Poin telah ditukarkan. Silakan baca langkah pengerjaan pada kotak kuning di bawah soal!", "💡");
+        }
+
+        function renderBoard() {
+            // 1. Items left on main table
+            document.getElementById('items-left-count').innerText = itemsLeft;
+            const itemsGrid = document.getElementById('items-grid');
+            itemsGrid.innerHTML = '';
+
+            for (let i = 0; i < itemsLeft; i++) {
+                const itemElem = document.createElement('div');
+                itemElem.className = 'item-card w-12 h-12 sm:w-13 sm:h-13 bg-white/95 border-2 border-emerald-500 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-md hover:shadow-lg cursor-pointer select-none transform transition hover:scale-110 active:scale-90 ring-2 ring-emerald-200/70';
+                itemElem.innerText = currentQuestionData.emoji;
+                itemElem.title = "Klik untuk memasukkan ke wadah aktif";
+                itemElem.onclick = function() {
+                    playItemClickSound();
+                    moveItemToActiveContainer();
+                };
+                itemsGrid.appendChild(itemElem);
+            }
+
+            // 2. Reserved Items Box
+            document.getElementById('reserve-current-count').innerText = reservedItems.length;
+            const reserveContainer = document.getElementById('reserve-items-container');
+            reserveContainer.innerHTML = '';
+
+            if (reservedItems.length === 0) {
+                reserveContainer.innerHTML = '<span class="text-[11px] text-rose-400 italic px-2">Belum ada benda disisihkan</span>';
+            } else {
+                reservedItems.forEach((emoji, idx) => {
+                    const resItem = document.createElement('div');
+                    resItem.className = 'w-9 h-9 sm:w-10 sm:h-10 bg-white border-2 border-rose-400 rounded-xl flex items-center justify-center text-xl cursor-pointer hover:bg-rose-100 transition shadow-sm active:scale-90';
+                    resItem.innerText = emoji;
+                    resItem.title = "Klik untuk mengembalikan ke meja utama";
+                    resItem.onclick = function() {
+                        playItemClickSound();
+                        moveItemFromReserveToTable(idx);
+                    };
+                    reserveContainer.appendChild(resItem);
+                });
+            }
+
+            // 3. Containers Area
+            const containersArea = document.getElementById('containers-area');
+            containersArea.innerHTML = '';
+            document.getElementById('containers-count').innerText = containers.length;
+
+            containers.forEach((container, cIdx) => {
+                const isActive = (cIdx === activeContainerIndex);
+                const containerBox = document.createElement('div');
+                containerBox.className = `p-3 rounded-2xl border-2 transition relative flex flex-col justify-between min-w-[125px] sm:min-w-[145px] cursor-pointer ${
+                    isActive ? 'border-emerald-600 bg-emerald-50/95 shadow-md ring-2 ring-emerald-400' : 'border-gray-300 bg-white/95 hover:border-emerald-300'
+                }`;
+                containerBox.onclick = function() {
+                    setActiveContainer(cIdx);
+                };
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'flex justify-between items-center mb-2';
+
+                const titleSpan = document.createElement('span');
+                titleSpan.className = 'font-game text-xs font-bold text-gray-700';
+                titleSpan.innerText = `Wadah ${cIdx + 1}`;
+                headerDiv.appendChild(titleSpan);
+
+                const rightHeaderDiv = document.createElement('div');
+                rightHeaderDiv.className = 'flex items-center space-x-1';
+
+                if (containers.length > 1) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'text-rose-500 hover:text-rose-700 hover:bg-rose-100 p-1 rounded-md text-xs transition';
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                    deleteBtn.title = 'Hapus wadah ini';
+                    deleteBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        deleteContainer(cIdx);
+                    };
+                    rightHeaderDiv.appendChild(deleteBtn);
+                }
+
+                headerDiv.appendChild(rightHeaderDiv);
+                containerBox.appendChild(headerDiv);
+
+                const slotsDiv = document.createElement('div');
+                slotsDiv.className = 'flex flex-wrap gap-1.5 min-h-[42px] items-center';
+
+                if (container.items.length === 0) {
+                    const emptyHint = document.createElement('span');
+                    emptyHint.className = 'text-xs text-gray-400 italic py-1 px-1';
+                    emptyHint.innerText = 'Wadah kosong';
+                    slotsDiv.appendChild(emptyHint);
+                } else {
+                    container.items.forEach((itemEmoji, s) => {
+                        const slot = document.createElement('div');
+                        slot.className = 'w-10 h-10 bg-white border-2 border-emerald-400 rounded-xl flex items-center justify-center text-xl shadow-sm cursor-pointer hover:bg-rose-50 hover:border-rose-400 transition active:scale-90';
+                        slot.innerText = itemEmoji;
+                        slot.title = "Klik untuk mengeluarkan benda kembali ke meja";
+                        const itemIdx = s;
+                        slot.onclick = function(e) {
+                            e.stopPropagation();
+                            playItemClickSound();
+                            moveItemFromContainerToTable(cIdx, itemIdx);
+                        };
+                        slotsDiv.appendChild(slot);
+                    });
+                }
+
+                containerBox.appendChild(slotsDiv);
+                containersArea.appendChild(containerBox);
+            });
+
+            updateSubtractionExpression();
+        }
+
+        function moveItemToActiveContainer() {
+            if (itemsLeft <= 0) return;
+
+            if (containers.length === 0) {
+                addNewContainer();
+            }
+
+            let container = containers[activeContainerIndex];
+
+            if (!container || container.items.length >= container.capacity) {
+                if (currentLevel === 1) {
+                    containers.push({ capacity: currentQuestionData.groupSize, items: [] });
+                    activeContainerIndex = containers.length - 1;
+                    container = containers[activeContainerIndex];
+                } else {
+                    let foundOpen = -1;
+                    for (let i = 0; i < containers.length; i++) {
+                        if (containers[i].items.length < containers[i].capacity) {
+                            foundOpen = i;
+                            break;
+                        }
+                    }
+                    if (foundOpen !== -1) {
+                        activeContainerIndex = foundOpen;
+                        container = containers[activeContainerIndex];
+                    } else {
+                        showModal("Wadah Aktif Penuh", "Wadah ini sudah penuh! Klik tombol '➕ Wadah Baru' untuk membuat wadah berikutnya.", "📦");
+                        return;
+                    }
+                }
+            }
+
+            itemsLeft--;
+            container.items.push(currentQuestionData.emoji);
+            renderBoard();
+        }
+
+        function moveItemFromContainerToTable(containerIdx, itemIdx) {
+            if (containers[containerIdx] && containers[containerIdx].items[itemIdx]) {
+                containers[containerIdx].items.splice(itemIdx, 1);
+                itemsLeft++;
+                renderBoard();
+            }
+        }
+
+        function moveItemToReserve() {
+            playItemClickSound();
+            if (itemsLeft <= 0) {
+                showModal("Meja Kosong", "Tidak ada benda tersisa di Meja Utama untuk disisihkan!", "📦");
+                return;
+            }
+            itemsLeft--;
+            reservedItems.push(currentQuestionData.emoji);
+            renderBoard();
+        }
+
+        function moveItemFromReserveToTable(index) {
+            if (reservedItems[index]) {
+                reservedItems.splice(index, 1);
+                itemsLeft++;
+                renderBoard();
+            }
+        }
+
+        function addNewContainer() {
+            if (itemsLeft <= 0 && containers.length > 0 && containers[containers.length - 1].items.length === 0) {
+                showModal("Informasi Wadah", "Wadah baru yang kosong sudah tersedia!", "ℹ️");
+                return;
+            }
+            containers.push({ capacity: currentQuestionData.groupSize, items: [] });
+            activeContainerIndex = containers.length - 1;
+            renderBoard();
+        }
+
+        function deleteContainer(index) {
+            if (containers.length <= 1) {
+                showModal("Peringatan", "Harus ada minimal 1 wadah di area pengelompokan!", "📦");
+                return;
+            }
+
+            const itemsInContainer = containers[index].items.length;
+            itemsLeft += itemsInContainer;
+
+            containers.splice(index, 1);
+
+            if (activeContainerIndex >= containers.length) {
+                activeContainerIndex = containers.length - 1;
+            } else if (activeContainerIndex === index) {
+                activeContainerIndex = Math.max(0, index - 1);
+            }
+
+            renderBoard();
+        }
+
+        function setActiveContainer(index) {
+            activeContainerIndex = index;
+            renderBoard();
+        }
+
+        function updateSubtractionExpression() {
+            const initialTotal = currentQuestionData.total;
+            const sizeGroup = currentQuestionData.groupSize;
+            
+            let fullContainersCount = 0;
+            containers.forEach(c => {
+                if (c.items.length === sizeGroup) {
+                    fullContainersCount++;
+                }
+            });
+
+            if (fullContainersCount === 0) {
+                document.getElementById('subtraction-expression').innerText = `${initialTotal} = ${initialTotal}`;
+                return;
+            }
+
+            let exprStr = `${initialTotal}`;
+            for (let i = 0; i < fullContainersCount; i++) {
+                exprStr += ` - ${sizeGroup}`;
+            }
+
+            const currentRem = initialTotal - (fullContainersCount * sizeGroup);
+            exprStr += ` = ${currentRem}`;
+
+            document.getElementById('subtraction-expression').innerText = exprStr;
+        }
+
+        function validateNumberInput() {
+            if (!currentQuestionData || currentQuestionData.type !== "Bentuk Angka") return true;
+            const inputElem = document.getElementById('input-number-result');
+            const feedbackElem = document.getElementById('number-input-feedback');
+            if (!inputElem) return true;
+            
+            const val = parseInt(inputElem.value);
+            const expected = currentQuestionData.total / currentQuestionData.groupSize;
+
+            if (isNaN(val)) {
+                if (feedbackElem) {
+                    feedbackElem.innerText = 'Ketik jawabanmu di atas';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-emerald-200';
+                }
+                return false;
+            }
+
+            if (val === expected) {
+                if (feedbackElem) {
+                    feedbackElem.innerText = '✓ Jawaban Tepat!';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-yellow-300';
+                }
+                return true;
+            } else {
+                if (feedbackElem) {
+                    feedbackElem.innerText = '❌ Jawaban Belum Pas';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-rose-300';
+                }
+                return false;
+            }
+        }
+
+        function validateStoryMathInput() {
+            if (!currentQuestionData || currentQuestionData.type === "Bentuk Angka") return true;
+
+            const totalInput = parseInt(document.getElementById('input-story-total').value);
+            const sizeInput = parseInt(document.getElementById('input-story-size').value);
+            const resultInput = parseInt(document.getElementById('input-story-result').value);
+            const feedbackElem = document.getElementById('story-input-feedback');
+
+            const expectedTotal = currentQuestionData.total;
+            const expectedSize = currentQuestionData.groupSize;
+            const expectedResult = expectedTotal / expectedSize;
+
+            if (isNaN(totalInput) || isNaN(sizeInput) || isNaN(resultInput)) {
+                if (feedbackElem) {
+                    feedbackElem.innerText = 'Lengkapi ketiga kotak di atas!';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-amber-700';
+                }
+                return false;
+            }
+
+            if (totalInput === expectedTotal && sizeInput === expectedSize && resultInput === expectedResult) {
+                if (feedbackElem) {
+                    feedbackElem.innerText = '✓ Kalimat Pembagian Tepat!';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-emerald-600';
+                }
+                return true;
+            } else {
+                if (feedbackElem) {
+                    feedbackElem.innerText = '❌ Periksa kembali angka dari cerita!';
+                    feedbackElem.className = 'text-[11px] font-bold mt-1 text-rose-600';
+                }
+                return false;
+            }
+        }
+
+        function checkCurrentContainer() {
+            playCheckClickSound();
+            let isMathValid = false;
+
+            // 1. Check Division Result or Division Sentence
+            if (currentQuestionData.type === "Bentuk Angka") {
+                isMathValid = validateNumberInput();
+                if (!isMathValid) {
+                    playWrongSound();
+                    levelWrongCount++; // Counted as wrong answer when number division result is wrong
+                    showModal("Jawaban Pembagian Salah", "Hasil pembagian yang kamu masukkan belum tepat. Periksa kembali dan coba lagi!", "🔢");
+                    return;
+                }
+            } else {
+                isMathValid = validateStoryMathInput();
+                if (!isMathValid) {
+                    playWrongSound();
+                    levelWrongCount++; // Counted as wrong answer when division sentence is wrong
+                    showModal("Kalimat Pembagian Salah", "Kalimat pembagian yang kamu tulis belum tepat sesuai dengan cerita. Periksa kembali angka total, isi per wadah, dan hasilnya!", "✏️");
+                    return;
+                }
+            }
+
+            // 2. Check if items are still left on table
+            if (itemsLeft > 0) {
+                playWrongSound();
+                showModal("Pemeriksaan Belum Selesai", `Masih ada ${itemsLeft} benda di meja utama! Silakan kelompokkan seluruh benda ke dalam wadah terlebih dahulu.`, "📦");
+                return;
+            }
+
+            // 3. Verify Container & Reserve Grouping
+            let isValid = true;
+            let invalidReason = "";
+
+            if (currentQuestionData.hots && currentQuestionData.reserve > 0) {
+                if (reservedItems.length !== currentQuestionData.reserve) {
+                    isValid = false;
+                    invalidReason = `Jumlah benda di Area Cadangan (${reservedItems.length}) tidak sesuai dengan cerita (seharusnya ${currentQuestionData.reserve} benda disisihkan).`;
+                }
+            }
+
+            if (isValid) {
+                if (containers.length === 0) {
+                    isValid = false;
+                    invalidReason = "Belum ada wadah yang diisi!";
+                } else {
+                    for (let i = 0; i < containers.length; i++) {
+                        if (containers[i].items.length !== currentQuestionData.groupSize) {
+                            isValid = false;
+                            invalidReason = `Wadah ${i + 1} berisi ${containers[i].items.length} benda (seharusnya ${currentQuestionData.groupSize} benda).`;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (isValid) {
+                triggerSuccess();
+            } else {
+                playWrongSound();
+                showModal("Pengelompokan Wadah Belum Sesuai", `Pengelompokan benda belum pas! ${invalidReason}`, "❌");
+            }
+        }
+
+        function triggerSuccess() {
+            playCorrectSound();
+            score += 20;
+            levelScoreGained += 20;
+            levelCorrectCount++;
+            document.getElementById('stat-score').innerText = score;
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            feedbackPanel.classList.remove('hidden');
+
+            const numGroups = containers.length;
+            const sizeGroup = currentQuestionData.groupSize;
+            const initialTotal = currentQuestionData.total;
+
+            let subStr = `${initialTotal}`;
+            for (let i = 0; i < numGroups; i++) {
+                subStr += ` - ${sizeGroup}`;
+            }
+            subStr += ` = 0`;
+
+            document.getElementById('feedback-formula').innerText = `${subStr} (${numGroups} kali pengurangan)`;
+            document.getElementById('feedback-summary').innerText = `Artinya: ${initialTotal} ÷ ${sizeGroup} = ${numGroups} wadah.`;
+
+            const hotsExp = document.getElementById('feedback-hots-explanation');
+            if (currentQuestionData.hots) {
+                const startTotal = currentQuestionData.actualTotal || (initialTotal + currentQuestionData.reserve);
+                hotsExp.classList.remove('hidden');
+                hotsExp.innerText = `💡 Analisis HOTS: Mula-mula ${startTotal} disisihkan ${currentQuestionData.reserve} benda ke Area Cadangan (${startTotal} - ${currentQuestionData.reserve} = ${initialTotal}). Kemudian sisa ${initialTotal} ÷ ${sizeGroup} = ${numGroups} wadah.`;
+            } else {
+                hotsExp.classList.add('hidden');
+            }
+
+            feedbackPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetCurrentQuestion() {
+            loadQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < totalQuestions - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showLevelResultScreen();
+            }
+        }
+
+        function showLevelResultScreen() {
+            playApplauseSound();
+            showScreen('screen-level-result');
+
+            const envNames = {
+                1: "Lingkungan RT",
+                2: "Lingkungan RW",
+                3: "Lingkungan Desa",
+                4: "Lingkungan Kelurahan"
+            };
+            const currentEnv = envNames[currentLevel] || `Level ${currentLevel}`;
+
+            document.getElementById('level-result-badge').innerText = `HASIL ${currentEnv.toUpperCase()}`;
+            document.getElementById('level-result-title').innerText = `Misi ${currentEnv} Selesai!`;
+
+            document.getElementById('lvl-res-correct').innerText = levelCorrectCount;
+            document.getElementById('lvl-res-wrong').innerText = levelWrongCount;
+            document.getElementById('lvl-res-tips').innerText = `${levelTipScoreSpent} Poin`;
+            document.getElementById('lvl-res-score').innerText = levelScoreGained;
+            document.getElementById('lvl-res-total-score').innerText = `${score} Poin`;
+
+            const nextBtn = document.getElementById('btn-next-level');
+            if (currentLevel < 4) {
+                const nextEnv = envNames[currentLevel + 1] || `Level ${currentLevel + 1}`;
+                nextBtn.classList.remove('hidden');
+                nextBtn.innerHTML = `<span>Lanjut ke ${nextEnv}</span> ➔`;
+            } else {
+                nextBtn.classList.remove('hidden');
+                nextBtn.innerHTML = `<span>Lihat Hasil Akhir Game</span> 🏆`;
+            }
+        }
+
+        function proceedToNextLevel() {
+            if (currentLevel < 4) {
+                selectLevel(currentLevel + 1);
+            } else {
+                showFinalResultScreen();
+            }
+        }
+
+        function retryCurrentLevel() {
+            selectLevel(currentLevel);
+        }
+
+        function showFinalResultScreen() {
+            playApplauseSound();
+            showScreen('screen-result');
+            document.getElementById('result-score').innerText = score;
+
+            let stars = "⭐ ⭐ ⭐";
+            if (score < 240) stars = "⭐ ⭐";
+            if (score < 120) stars = "⭐";
+            document.getElementById('result-stars').innerText = stars;
+        }
+
+        window.onload = function() {
+            loadSavedQuestionBank();
+            goToCover();
+        };
+    </script>
+</body>
+</html>
